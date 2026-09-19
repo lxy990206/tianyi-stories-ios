@@ -13,7 +13,17 @@
     "TianyiStories": {
       "type": "application",
       "platform": "iOS",
-      "sources": ["TianyiStories"],
+      "sources": [
+        {
+          "path": "TianyiStories",
+          "excludes": ["Resources/www"]
+        },
+        {
+          "path": "TianyiStories/Resources/www",
+          "type": "folder",
+          "buildPhase": "resources"
+        }
+      ],
       "settings": {
         "base": {
           "PRODUCT_BUNDLE_IDENTIFIER": "wywdcy.luotianyi.tianyi.stories",
