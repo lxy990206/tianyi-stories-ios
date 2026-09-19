@@ -1,0 +1,10 @@
+# XcodeGen 生成的 Xcode 工程(CI 与本机构建时由 xcodegen generate 重建)
+app/TianyiStories.xcodeproj/
+
+# 构建中间产物
+app/build/
+
+# 打包产物不入库(由 CI 产出后手动放入本地目录)
+*.ipa
+
+.DS_Store

@@ -1,0 +1,30 @@
+# 云端构建未签名 IPA(无 Mac 也能出包)
+# 用法:把本目录(整个 IOS/)推到 GitHub 仓库根 → Actions 页选择
+#       "Build unsigned IPA" → Run workflow → 完成后在 Artifacts 下载 IPA。
+# 产物为未签名 IPA,随后按 签名与安装指南.md 用爱思助手自签名安装。
+name: Build unsigned IPA
+
+on:
+  workflow_dispatch:      # 手动触发
+  push:
+    tags: ['v*']          # 打 tag(如 v1.1.10)自动触发
+
+jobs:
+  build:
+    runs-on: macos-14     # 自带 Xcode 15+,满足工程要求
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Build unsigned IPA
+        run: bash scripts/make_unsigned_ipa.sh
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TianyiStories-unsigned-ipa
+          path: app/TianyiStories-unsigned.ipa
+          if-no-files-found: error

@@ -1,0 +1,49 @@
+// XKIT1
+{
+  "name": "TianyiStories",
+  "options": {
+    "bundleIdPrefix": "wywdcy.luotianyi",
+    "deploymentTarget": {
+      "iOS": "13.0"
+    },
+    "developmentLanguage": "zh-Hans",
+    "createIntermediateGroups": true
+  },
+  "targets": {
+    "TianyiStories": {
+      "type": "application",
+      "platform": "iOS",
+      "sources": ["TianyiStories"],
+      "settings": {
+        "base": {
+          "PRODUCT_BUNDLE_IDENTIFIER": "wywdcy.luotianyi.tianyi.stories",
+          "PRODUCT_NAME": "天依物语",
+          "MARKETING_VERSION": "1.1.10",
+          "CURRENT_PROJECT_VERSION": "1",
+          "TARGETED_DEVICE_FAMILY": "1,2",
+          "INFOPLIST_FILE": "TianyiStories/Info.plist",
+          "SWIFT_VERSION": "5.7",
+          "CODE_SIGN_IDENTITY": "",
+          "CODE_SIGNING_REQUIRED": "NO",
+          "CODE_SIGNING_ALLOWED": "NO",
+          "ENABLE_BITCODE": "NO"
+        }
+      }
+    }
+  },
+  "schemes": {
+    "TianyiStories": {
+      "build": {
+        "targets": {
+          "TianyiStories": "all"
+        }
+      },
+      "run": {
+        "config": "Debug"
+      },
+      "archive": {
+        "config": "Release"
+      }
+    }
+  }
+}

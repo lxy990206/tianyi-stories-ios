@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "_comment": "旅行剧情(1.1.10Beta5/137 预留接口,待填充):stories 以 TravelSystem.destinations.id 为键;text 填充后 UI 在到达时自动展示小剧场(pending=true 为占位);fetch 失败走空库,UI 回落原 toast 行为",
+  "stories": {
+    "home": { "pending": true, "icon": "🏠", "title": "家中·日常", "text": "" },
+    "park": { "pending": true, "icon": "🌸", "title": "樱花公园·春", "text": "" },
+    "school": { "pending": true, "icon": "🏫", "title": "学校·回忆", "text": "" },
+    "cafe": { "pending": true, "icon": "☕", "title": "咖啡馆·午后", "text": "" },
+    "amusement": { "pending": true, "icon": "🎡", "title": "游乐园·心动", "text": "" },
+    "beach": { "pending": true, "icon": "🌊", "title": "海边·远方", "text": "" }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "note": "内置 API 模型(官方提供,用户免配密钥,按轮扣钻石;模型报错/无回复内容不扣)。endpoint 为内置网关占位,接入后替换;鉴权密钥经 SecureStore('builtin_api_key') 原生 XOR 提供,请求须浏览器式 UA(如经 CF 隧道)。",
+  "endpoint": "https://YOUR-BUILTIN-GATEWAY/v1/chat/completions",
+  "models": [
+    {
+      "id": "dsv4f-preview",
+      "label": "DSV4F 预览版",
+      "model": "dsv4f-preview",
+      "cost": 10
+    },
+    {
+      "id": "minimax-m2-her",
+      "label": "MiniMax M2-Her",
+      "model": "minimax-m2-her",
+      "cost": 20
+    }
+  ]
+}

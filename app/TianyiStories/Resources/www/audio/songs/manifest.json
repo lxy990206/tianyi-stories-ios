@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "_comment": "点歌曲库(1.1.10Beta5/137 预留,服务端暂不连接):songs 条目 {id,title,artist,alias[],file};file 相对 assets/audio/songs/;server 为远端曲库预留字段,接入后经 SongSystem.attachSongServer(adapter) 激活",
+  "server": null,
+  "songs": []
+}

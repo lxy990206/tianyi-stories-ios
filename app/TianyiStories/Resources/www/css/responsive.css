@@ -1,0 +1,143 @@
+/* ====== 动态显示适配 · 任意宽高比 + 刘海/挖孔/手势条规避 ======
+ * 【项目规则】（修正版：动态适配，非设备分类断点）
+ * 1. 不锁定任何宽高比与方向：1:1 方屏按方屏显示，19:9 按 19:9 铺满，
+ *    横竖屏均以真实视口比例渲染（原生层 screenOrientation=fullSensor）；
+ * 2. 布局用 inset:0/flex/1fr 等流式方式铺满视口；高度基准用 100dvh
+ *    （fallback 100vh）；禁止按设备类别（手表/手机/平板）写死断点；
+ * 3. 刘海/挖孔/手势条规避统一走 CSS 变量链：var(--safe-inset-*, 0px)
+ *    原生 MainActivity 监听 WindowInsets 实时注入真实值（旋转/折叠自动重算）；
+ *    不回退 env()（Chrome 58 不识别 env 会连带整条声明失效；浏览器预览
+ *    无刘海避让属可接受降级）
+ * 4. 只为极端比例（矮横屏）与极窄视口设防护规则；
+ * 5. 新增全局适配规则只加本文件（index.html 最后加载），不散落其他 css；
+ * 6. 【老 WebView 兼容】现代 CSS 属性必须传统回退：inset:0 一律四边双写；
+ *    flex/grid gap 由文件尾部 @supports not (gap) 块统一 margin 兜底；
+ *    禁止新增无回退的 C87+/C84+ 属性（dvh 需先写 vh 行）。
+ *    背景：展锐 Android 8.1 WebView(Chrome 59 实测) 下 inset 缺失导致背景/弹窗
+ *    不铺满、模态错位(1.1.9-Beta2 用户截图实证)。
+ * 7. 【低性能降级】compat.js 能力检测(核数≤4/内存≤2/内核<65)注入
+ *    html.low-perf,本文件降级块据此停用大半径 blur 与常驻大元素动画
+ *    (展锐 SC9832E 实测 blur(80px)×5 大元素动画帧率过低)。
+ * 8. 【智能适配分级】DeviceTier.js(1.1.10/131)以原生内核级配置(核数/频率/
+ *    内存/GPU 驱动字符串,不信任机型字符串——华强北伪装设备防护)计算 tier:
+ *    tier≤1 注入 low-perf(0 加 ultra-low),tier≥2 移除误判的 low-perf
+ *    (修正核数≤4 启发式对中端 4 核机的假阳性)。
+ */
+
+/* ---------- 安全区规避（全方向，全设备生效） ---------- */
+
+/* 153:对话页=独立全屏页面,安全区避让由页内输入行自带(旧抽屉 padding 规则移除) */
+
+/* 153:expanded 概念已随全屏页化移除 */
+
+/* 主容器：横屏时左右挖孔/圆角避让（竖屏时 inset 为 0，无副作用） */
+.game-container {
+    padding-left: var(--safe-inset-left, 0px);
+    padding-right: var(--safe-inset-right, 0px);
+}
+
+/* HUD 顶/底栏在文档流内，安全区已由 .game-container 的 padding 统一处理，
+ * 此处不再重复叠加（fixed 元素如 chat-panel 不受容器 padding 影响，才需要自带） */
+
+/* ---------- 极窄视口防护（触控目标可用性，非设备分类） ---------- */
+@media (max-width: 360px) {
+    .chat-bubble { max-width: 90%; }
+    .chat-input-row textarea { min-height: 34px; }
+}
+
+/* ---------- 极端比例防护：矮横屏（宽>高 且 高≤500px，含 19:9 横置） ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+    .chat-scene { height: 24vh; }
+    .modal-card { max-height: 96vh; max-height: 96dvh; }
+}
+
+/* ---------- 老 WebView 兼容兜底(Chrome 58 基线,见 1.1.9-Beta2+ 展锐适配) ---------- */
+/* 现代属性均已做传统回退:
+ *  - inset:0 → 全部四边 top/right/bottom/left 双写(原位保留 inset);
+ *  - 安全区 → var(--safe-inset-*, 0px)(原生注入变量,不再依赖 env());
+ *  - flex/grid gap(C84+/C66+)→ 以下 @supports 相邻兄弟 margin 兜底,
+ *    仅在无 gap 能力的内核生效,现代内核忽略本块。 */
+@supports not (gap: 1px) {
+    /* 纵向容器 */
+    .form-row > * + * { margin-top: 0.4rem; }
+    .form-row-2 > * + * { margin-top: 0.8rem; }
+    .start-buttons > * + * { margin-top: 0.8rem; }
+    .saveslot-list > * + * { margin-top: 0.6rem; }
+    .gender-buttons > * + * { margin-top: 0.8rem; }
+    .btn-gender > * + * { margin-top: 0.4rem; }
+    .tutorial-options > * + * { margin-top: 0.6rem; }
+    .toast-root > * + * { margin-top: 0.4rem; }
+    .item-grid > * + * { margin-top: 0.5rem; }
+    .diary-list > * + * { margin-top: 0.5rem; }
+    .hud-bottom > * + * { margin-top: 0.6rem; }
+    .action-grid > * + * { margin-top: 0.3rem; }
+    .btn-action > * + * { margin-top: 0.1rem; }
+    .chat-messages > * + * { margin-top: 0.6rem; }
+    .gift-item > * + * { margin-top: 0.15rem; }
+
+    /* 横向容器 */
+    .btn > * + * { margin-left: 0.4rem; }
+    .switch > * + * { margin-left: 0.5rem; }
+    .modal-actions > * + * { margin-left: 0.6rem; }
+    .slot-info > * + * { margin-left: 1rem; }
+    .identity-buttons > * + * { margin-left: 0.4rem; }
+    .tutorial-controls > * + * { margin-left: 1rem; }
+    .settings-tabs > * + * { margin-left: 0.3rem; }
+    .diary-meta > * + * { margin-left: 0.8rem; }
+    .api-presets > * + * { margin-left: 0.4rem; }
+    .story-btns > * + * { margin-left: 0.5rem; }
+    .checkin-reward > * + * { margin-left: 0.6rem; }
+    .hud-top > * + * { margin-left: 0.5rem; }
+    .hud-left > * + * { margin-left: 0.3rem; }
+    .hud-right > * + * { margin-left: 0.3rem; }
+    .hud-stat > * + * { margin-left: 0.5rem; }
+    .scene-outfit-badge > * + * { margin-left: 0.4rem; }
+    .chat-header-title > * + * { margin-left: 0.4rem; }
+    .chat-bubble .meta > * + * { margin-left: 0.6rem; }
+    .chat-input-row > * + * { margin-left: 0.4rem; }
+    .asr-pack-row > * + * { margin-left: 0.6rem; }
+    .gift-panel-grid > * + * { margin-left: 0.45rem; }
+}
+
+/* ---------- 低性能设备降级(.low-perf,由 compat.js 能力检测注入) ---------- */
+/* 弱 SoC(如展锐 SC9832E 4xA53@1.4GHz)+ 老 WebView 上,大半径 blur 滤镜
+ * 与常驻大元素动画为帧率杀手(软件重绘);静态径向渐变已足够提供氛围背景。 */
+.low-perf .fluid-bg .fluid-blob,
+.low-perf .loading-bg .fluid-blob,
+.low-perf .start-bg .fluid-blob {
+    filter: none;              /* 去除 blur(60~80px) —— 帧率杀手第一名 */
+    animation: none;           /* 停止常驻 drift 动画 */
+    opacity: 0.45;             /* 静态渐变圆保留氛围 */
+    will-change: auto;
+}
+.low-perf .loading-logo {
+    animation: none;           /* 停 hue-rotate(全屏 filter 动画)+ box-shadow pulse */
+}
+.low-perf .hud-stat,
+.low-perf .chat-bubble,
+.low-perf .scene-character { will-change: auto; }
+/* backdrop-filter 为低端 GPU 合成杀手(每帧重采样整层,ui.css logo/进度条 16px/6px) */
+.low-perf .logo-circle,
+.low-perf .loading-progress,
+.low-perf .modal-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* ---------- 极低配增强降级(.ultra-low,DeviceTier tier0 注入或用户设置"关闭动画") ---------- */
+/* 【1.1.12/134】全部动画停用(含功能指示,状态切换保留瞬时颜色/透明度变化);
+ * transition 收敛 + backdrop-filter 砍除——无差分合成能力的小 GPU 上这三者是最重渲染负载 */
+.ultra-low *, .ultra-low *::before, .ultra-low *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+.ultra-low .heart-fx { display: none; }   /* 心心特效 DOM(JS 侧已门控,此处兜底) */
+
+/* ---------- 极小屏兜底:强制最小可用字号与不换行截断 ---------- */
+@media (max-width: 360px) {
+    .hud-top { flex-wrap: nowrap; overflow: hidden; }
+    .hud-stat span { max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .modal-card { padding: 1rem; }
+    .modal-card h2 { font-size: 1.1rem; }
+    .save-slot-card { padding: 0.6rem 0.8rem; }
+}

@@ -1,0 +1,289 @@
+/* ====== 天依物语 主样式 · Aero Glass + Fluid ====== */
+/* 全局 UI 字体(1.1.10Beta5/154):HarmonyOS Sans SC Thin,assets/fonts/ */
+@font-face {
+    font-family: 'HarmonyOS Sans SC Thin';
+    src: url('../fonts/HarmonyOS_Sans_SC_Thin.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+:root {
+    --bg: #060D14;
+    --bg2: rgba(14, 26, 38, 0.65);
+    --bg3: rgba(27, 56, 82, 0.55);
+    --ink: #F4F8FB;
+    --ink-soft: #D6E5F0;
+    --muted: #9DB3C6;
+    --rule: rgba(63, 169, 214, 0.18);
+    --accent: #3FA9D6;
+    --accent2: #7BC4E8;
+    --accent3: #FFD0E5;
+    --warm: #F4B6C2;
+    --danger: #E85A6E;
+    --success: #5FCB8E;
+    --warning: #F4C95D;
+    --glass-bg: rgba(14, 26, 38, 0.45);
+    --glass-border: rgba(123, 196, 232, 0.2);
+    --glass-blur: 18px;
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    --radius-sm: 8px;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --font-cjk: "HarmonyOS Sans SC Thin", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-display: "LXGW WenKai", "Noto Serif CJK SC", "Noto Sans CJK SC", serif;
+    --font-mono: "JetBrains Mono", "Roboto Mono", monospace;
+    --transition: 280ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-cjk);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    /* 键盘顶起字体缩放防护(141)：输入法 adjustResize 收缩视口触发布局重排时,
+       Chromium 的 font boosting(text autosizing)会按新布局重算文字放大倍率 →
+       键盘弹出后字号突变;锁定 100% 保证任何布局变化下字号恒定。 */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    position: relative;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+}
+
+/* ====== 流体背景动画层 ====== */
+.fluid-bg {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.fluid-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    will-change: transform;
+}
+
+.fluid-blob:nth-child(1) {
+    width: 50vmax; height: 50vmax;
+    background: radial-gradient(circle, rgba(63,169,214,0.35) 0%, transparent 70%);
+    top: -15%; left: -10%;
+    animation: blobDrift1 18s ease-in-out infinite alternate;
+}
+.fluid-blob:nth-child(2) {
+    width: 40vmax; height: 40vmax;
+    background: radial-gradient(circle, rgba(244,182,194,0.3) 0%, transparent 70%);
+    bottom: -10%; right: -10%;
+    animation: blobDrift2 22s ease-in-out infinite alternate;
+}
+.fluid-blob:nth-child(3) {
+    width: 35vmax; height: 35vmax;
+    background: radial-gradient(circle, rgba(123,196,232,0.25) 0%, transparent 70%);
+    top: 40%; left: 50%;
+    animation: blobDrift3 26s ease-in-out infinite alternate;
+}
+.fluid-blob:nth-child(4) {
+    width: 30vmax; height: 30vmax;
+    background: radial-gradient(circle, rgba(255,208,229,0.2) 0%, transparent 70%);
+    top: 10%; right: 20%;
+    animation: blobDrift4 20s ease-in-out infinite alternate;
+}
+.fluid-blob:nth-child(5) {
+    width: 25vmax; height: 25vmax;
+    background: radial-gradient(circle, rgba(95,203,142,0.15) 0%, transparent 70%);
+    bottom: 20%; left: 30%;
+    animation: blobDrift5 24s ease-in-out infinite alternate;
+}
+
+@keyframes blobDrift1 {
+    0%   { transform: translate(0, 0) scale(1); }
+    33%  { transform: translate(8vw, 12vh) scale(1.1); }
+    66%  { transform: translate(-5vw, 8vh) scale(0.95); }
+    100% { transform: translate(12vw, -6vh) scale(1.05); }
+}
+@keyframes blobDrift2 {
+    0%   { transform: translate(0, 0) scale(1); }
+    33%  { transform: translate(-10vw, -8vh) scale(1.08); }
+    66%  { transform: translate(6vw, -12vh) scale(0.92); }
+    100% { transform: translate(-8vw, 5vh) scale(1.12); }
+}
+@keyframes blobDrift3 {
+    0%   { transform: translate(0, 0) scale(1) rotate(0deg); }
+    50%  { transform: translate(-15vw, 10vh) scale(1.15) rotate(60deg); }
+    100% { transform: translate(10vw, -8vh) scale(0.9) rotate(120deg); }
+}
+@keyframes blobDrift4 {
+    0%   { transform: translate(0, 0) scale(1); }
+    40%  { transform: translate(12vw, 8vh) scale(1.1); }
+    100% { transform: translate(-8vw, -10vh) scale(0.95); }
+}
+@keyframes blobDrift5 {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(10vw, -12vh) scale(1.2); }
+    100% { transform: translate(-12vw, 6vh) scale(0.85); }
+}
+
+/* ====== 全局毛玻璃 mixin ====== */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+    background: rgba(14, 26, 38, 0.6);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    border: 1px solid rgba(123, 196, 232, 0.25);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+input, textarea, select { user-select: text; }
+button, input, textarea, select { font-family: inherit; }
+
+.screen {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: center;
+    padding: var(--safe-inset-top, 0px) var(--safe-inset-right, 0px) var(--safe-inset-bottom, 0px) var(--safe-inset-left, 0px);
+}
+
+button {
+    cursor: pointer; background: none; border: 0;
+    color: inherit; font-size: 15px;
+}
+button:disabled { opacity: 0.4; pointer-events: none; }
+
+.btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.65rem 1.4rem;
+    border-radius: var(--radius);
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: var(--ink);
+    border: 1px solid var(--glass-border);
+    transition: all var(--transition);
+    font-weight: 500; min-height: 40px; gap: 0.4rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.btn:hover:not(:disabled) {
+    background: rgba(63, 169, 214, 0.2);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(63,169,214,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+
+.btn-primary {
+    background: linear-gradient(135deg, rgba(63,169,214,0.6), rgba(123,196,232,0.5));
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-color: rgba(123,196,232,0.4);
+    color: #fff; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(63,169,214,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(63,169,214,0.75), rgba(123,196,232,0.65));
+    box-shadow: 0 8px 30px rgba(63,169,214,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.btn-secondary {
+    background: rgba(27, 56, 82, 0.5);
+    border-color: rgba(63,169,214,0.35);
+    color: var(--accent2);
+}
+
+.btn-ghost {
+    background: transparent;
+    border-color: rgba(63,169,214,0.12);
+    color: var(--muted);
+}
+.btn-ghost:hover:not(:disabled) {
+    color: var(--ink);
+    border-color: var(--accent);
+    background: rgba(63,169,214,0.08);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, rgba(232,90,110,0.6), rgba(232,90,110,0.4));
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: #fff; border-color: transparent;
+}
+
+.btn-icon {
+    min-width: 36px; min-height: 36px;
+    padding: 0; font-size: 18px;
+}
+
+input, textarea, select {
+    font-family: inherit;
+    background: rgba(14, 26, 38, 0.6);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    color: var(--ink);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.8rem;
+    width: 100%; font-size: 15px;
+    transition: all var(--transition);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);
+}
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(27, 56, 82, 0.6);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.15), 0 0 0 3px rgba(63,169,214,0.15);
+}
+
+textarea { resize: none; }
+
+.form-row {
+    display: flex; flex-direction: column;
+    gap: 0.4rem; margin-bottom: 1rem; align-items: stretch;
+}
+.form-row label {
+    font-size: 0.85rem; color: var(--muted); font-weight: 500;
+}
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+.form-error { color: var(--danger); font-size: 0.85rem; margin-bottom: 0.5rem; }
+.form-hint { color: var(--muted); font-size: 0.85rem; margin-left: 0.5rem; }
+
+.switch { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.switch input { width: auto; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(63,169,214,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(63,169,214,0.5); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .fluid-blob { animation: none !important; opacity: 0.3; }
+}
+
+/* ====== 小屏设备适配（手表等） ====== */
+@media (max-height: 600px), (max-width: 360px) {
+    html, body { font-size: 11px; }
+    .modal-card { max-height: 96vh; padding: 0.8rem; }
+    .modal-card h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .modal-actions { margin-top: 0.8rem; }
+    .btn { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+    .btn-action { font-size: 0.55rem; min-height: 28px; padding: 0.2rem 0.1rem; }
+    .form-row { margin-bottom: 0.6rem; }
+    .form-row label { font-size: 0.85rem; }
+    .switch { font-size: 0.85rem; }
+}

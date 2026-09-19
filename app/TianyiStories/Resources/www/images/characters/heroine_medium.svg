@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600">
+    <defs>
+        <radialGradient id="aura" cx="50%" cy="45%">
+            <stop offset="0%" stop-color="#3FA9D6" stop-opacity="0.25"/>
+            <stop offset="60%" stop-color="#3FA9D6" stop-opacity="0.08"/>
+            <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="hair" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#7BC4E8"/>
+            <stop offset="100%" stop-color="#3FA9D6"/>
+        </linearGradient>
+        <linearGradient id="dress" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFFFFF"/>
+            <stop offset="100%" stop-color="#E5F2FA"/>
+        </linearGradient>
+        <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+    </defs>
+    <!-- 光环背景 -->
+    <ellipse cx="200" cy="300" rx="180" ry="260" fill="url(#aura)"/>
+    <!-- 双马尾 -->
+    <ellipse cx="115" cy="300" rx="38" ry="130" fill="url(#hair)" opacity="0.9" filter="url(#glow)"/>
+    <ellipse cx="285" cy="300" rx="38" ry="130" fill="url(#hair)" opacity="0.9" filter="url(#glow)"/>
+    <!-- 头 -->
+    <circle cx="200" cy="220" r="88" fill="#FFE4D6"/>
+    <!-- 头发前刘海 -->
+    <path d="M 112 200 Q 200 55 288 200 L 288 258 Q 200 218 112 258 Z" fill="url(#hair)"/>
+    <!-- 刘海碎发 -->
+    <path d="M 140 180 Q 155 130 170 180" fill="#7BC4E8" opacity="0.7"/>
+    <path d="M 230 180 Q 245 130 260 180" fill="#7BC4E8" opacity="0.7"/>
+    <!-- 蝴蝶结 -->
+    <g transform="translate(200,138)" filter="url(#glow)">
+        <path d="M -28 0 L -12 -12 L 0 0 L -12 12 Z" fill="#7BC4E8"/>
+        <path d="M 28 0 L 12 -12 L 0 0 L 12 12 Z" fill="#7BC4E8"/>
+        <circle cx="0" cy="0" r="6" fill="#3FA9D6"/>
+    </g>
+    <!-- 眼睛 -->
+    <ellipse cx="170" cy="222" rx="11" ry="15" fill="#1A1A1A"/>
+    <ellipse cx="230" cy="222" rx="11" ry="15" fill="#1A1A1A"/>
+    <!-- 眼睛高光 -->
+    <circle cx="174" cy="218" r="4" fill="#fff" opacity="0.85"/>
+    <circle cx="234" cy="218" r="4" fill="#fff" opacity="0.85"/>
+    <circle cx="168" cy="225" r="2" fill="#fff" opacity="0.5"/>
+    <circle cx="228" cy="225" r="2" fill="#fff" opacity="0.5"/>
+    <!-- 腮红 -->
+    <ellipse cx="152" cy="240" rx="12" ry="6" fill="#FFB6C1" opacity="0.35"/>
+    <ellipse cx="248" cy="240" rx="12" ry="6" fill="#FFB6C1" opacity="0.35"/>
+    <!-- 嘴 -->
+    <path d="M 188 258 Q 200 268 212 258" stroke="#E89AA8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- 身体 -->
+    <path d="M 132 320 Q 200 298 268 320 L 288 600 L 112 600 Z" fill="url(#dress)"/>
+    <!-- 蓝色饰带 -->
+    <path d="M 148 362 L 252 362 L 257 382 L 143 382 Z" fill="#3FA9D6"/>
+    <!-- 衣领装饰 -->
+    <path d="M 160 320 L 200 340 L 240 320" stroke="#3FA9D6" stroke-width="2" fill="none"/>
+</svg>
