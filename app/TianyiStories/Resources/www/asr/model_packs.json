@@ -1,0 +1,64 @@
+{
+  "version": 2,
+  "note": "端侧ASR定义。runtime=引擎运行时so(按设备ABI从分发服务下载,删除即清理);packs=识别模型包。files.sha256 为空串时跳过校验;enabled=false 的包不提供下载入口(预留)。",
+  "runtime": {
+    "id": "asr-runtime",
+    "name": "端侧引擎运行时",
+    "enabled": true,
+    "distribution": "dynfs",
+    "server": "https://dynfs.wywdcy.dpdns.org",
+    "package": "asr-runtime",
+    "note": "经 dynfs 分发服务(HMAC 签名 check→签名 URL 下载,app_secret XOR 存原生层);byAbi 的 size/sha256 为下载完整性校验基准(与 dynfs 制品一致)。",
+    "byAbi": {
+      "arm64-v8a": {
+        "name": "libfunasr_jni.so",
+        "size": 19743720,
+        "sha256": "d99e8e2b6e113dd0654f3246fe634a9113689723c80dcf40a070949ed730f845"
+      },
+      "armeabi-v7a": {
+        "name": "libfunasr_jni.so",
+        "size": 13597652,
+        "sha256": "6a8d923ef5f5d3c6d96d3dd8a85a3ba1a082e242b6896db0f11d966bdf9c1923"
+      }
+    }
+  },
+  "packs": [
+    {
+      "id": "sensevoice-q8",
+      "name": "SenseVoiceSmall 轻量包 (q8, 约242MB)",
+      "enabled": true,
+      "runtime": "llamacpp-funasr",
+      "language": "zh/en/ja/yue",
+      "files": [
+        {
+          "name": "sensevoice-small-q8.gguf",
+          "url": "https://hf-mirror.com/FunAudioLLM/SenseVoiceSmall-GGUF/resolve/main/sensevoice-small-q8.gguf",
+          "size": 254208320,
+          "sha256": "4ae45c94422de949b387e2e0fb10d7e14e4c42c69db30c3444ecc7d4b844b7c5"
+        }
+      ]
+    },
+    {
+      "id": "funasr-nano-q4",
+      "name": "Fun-ASR-Nano 增强包 (q4km, 旗舰机可选)",
+      "enabled": false,
+      "runtime": "llamacpp-funasr",
+      "language": "zh/方言/en/ja",
+      "note": "预留增强包:启用前需校准 size/sha256,并确认端侧运行时已接入 Nano 解码路径",
+      "files": [
+        {
+          "name": "funasr-encoder-f16.gguf",
+          "url": "https://hf-mirror.com/FunAudioLLM/Fun-ASR-Nano-GGUF/resolve/main/funasr-encoder-f16.gguf",
+          "size": 0,
+          "sha256": ""
+        },
+        {
+          "name": "qwen3-0.6b-q4km.gguf",
+          "url": "https://hf-mirror.com/FunAudioLLM/Fun-ASR-Nano-GGUF/resolve/main/qwen3-0.6b-q4km.gguf",
+          "size": 0,
+          "sha256": ""
+        }
+      ]
+    }
+  ]
+}

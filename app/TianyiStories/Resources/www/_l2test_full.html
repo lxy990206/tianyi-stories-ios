@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- 205:Live2D 全功能测试页——真实 hud.css+聊天条/气泡流 DOM+AsrManager,
+     断言:睡觉状态/mood 表情增强/30s 销毁重建/ASR DOM 切换/气泡 60% 透明度/聊天条安全区 -->
+<link rel="stylesheet" href="/css/hud.css?v=205t">
+<style>
+html,body{margin:0;height:100%;background:#87ceeb}
+#live2d-page{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#live2d-canvas{width:100%;height:100%}
+#live2d-status{position:fixed;top:10px;left:10px;color:#333;font:14px sans-serif}
+</style>
+</head><body>
+<div id="live2d-page" style="display:flex">
+  <canvas id="live2d-canvas"></canvas>
+  <div id="live2d-status" class="live2d-status"></div>
+  <div id="l2-chat-flow" class="l2-chat-flow"></div>
+  <div id="l2-chat-bar" class="l2-chat-bar">
+    <button id="l2-mic-btn" class="l2-mic-btn" title="语音输入">🎤</button>
+    <input id="l2-chat-input" class="l2-chat-input" type="text" placeholder="和天依聊聊…" autocomplete="off">
+    <button id="l2-send-btn" class="l2-send-btn" title="发送">➤</button>
+  </div>
+  <button id="live2d-close" class="live2d-close" title="返回">✕</button>
+</div>
+<script src="/js/systems/Live2DSystem.js?v=205t"></script>
+<script src="/js/core/AsrManager.js?v=205t"></script>
+<script>
+window.live2dSystem._zoneDebug = false;
+window.live2dSystem._gazeDebug = false;
+// 手动设安全区变量模拟设备 insets(hud.css 三件套回退域)
+document.documentElement.style.setProperty('--safe-inset-bottom', '30px');
+document.documentElement.style.setProperty('--edge-guard', '6px');
+window.live2dSystem.openPage();
+</script>
+</body></html>

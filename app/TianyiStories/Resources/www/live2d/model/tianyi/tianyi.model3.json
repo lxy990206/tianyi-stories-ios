@@ -1,0 +1,30 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "tianyi.moc3",
+    "Textures": [
+      "tex/texture_00.png",
+      "tex/texture_01.png",
+      "tex/texture_02.png",
+      "tex/texture_03.png",
+      "tex/texture_04.png",
+      "tex/texture_05.png",
+      "tex/texture_06.png",
+      "tex/texture_07.png"
+    ],
+    "Physics": "tianyi.physics3.json",
+    "DisplayInfo": "洛天依 千叶和鸢live2模型.cdi3.json"
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": []
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": []
+    }
+  ]
+}

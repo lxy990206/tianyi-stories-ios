@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- 206:主 UI 布局断言页——真实 hud.css/responsive.css+主界面结构,
+     断言:①人格条到底部导航间距在多视口恒定(--nav-h 锚定);②顶部胶囊条组水平居中 -->
+<link rel="stylesheet" href="/css/hud.css?v=207t">
+<link rel="stylesheet" href="/css/responsive.css?v=207t">
+<link rel="stylesheet" href="/css/ui.css?v=207t">
+<style>
+html,body{margin:0;height:100%}
+#game-container{position:fixed;inset:0;overflow:hidden;background:#fff}
+</style>
+</head><body>
+<div id="game-container">
+    <div id="modal-fixtures" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:400;background:rgba(6,13,20,0.55);">
+        <div class="modal-card" id="fx-card"><h2>标准弹窗</h2></div>
+        <div class="modal-card modal-large" id="fx-large" style="position:absolute;opacity:0;pointer-events:none;"><h2>大弹窗</h2></div>
+        <div class="gomoku-board" id="fx-board" style="position:absolute;opacity:0;pointer-events:none;"></div>
+    </div>
+    <header id="hud-top" class="hud hud-top">
+        <div class="hud-chip" id="hud-day">第 2 天</div>
+        <div class="hud-chip" id="hud-real-date">9月29日 星期二</div>
+        <div class="hud-chip">💎 <span id="hud-coin-value">16159</span></div>
+        <div class="hud-chip" id="hud-time">18:59</div>
+        <button id="hud-settings-btn" class="hud-chip hud-chip-btn">⚙</button>
+    </header>
+    <main id="scene-root" class="scene-root">
+        <div id="character-layer" class="character-layer">
+            <img id="character-image" alt="天依" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='1600'%3E%3Crect width='900' height='1600' fill='%23aef'/%3E%3C/svg%3E">
+        </div>
+    </main>
+    <nav id="bottom-nav" class="bottom-nav">
+        <div id="scene-outfit-badge" class="scene-outfit-badge" style="display: inline-flex;">👗 默认 · 白色连衣裙 · 本真歌姬人格</div>
+        <div class="nav-row">
+            <button class="nav-btn nav-btn-icon"><span class="nav-icon">🛒</span></button>
+            <button class="nav-btn nav-btn-main"><span class="nav-icon">🎮</span><span class="nav-label">Live2D</span></button>
+            <button class="nav-btn nav-btn-main"><span class="nav-icon">🌐</span><span class="nav-label">活动</span></button>
+            <button class="nav-btn nav-btn-icon"><span class="nav-icon">📝</span></button>
+        </div>
+        <div class="nav-row">
+            <button class="nav-btn nav-btn-icon"><span class="nav-icon">🎮</span></button>
+            <button class="nav-btn nav-btn-main"><span class="nav-icon">💬</span><span class="nav-label">对话</span></button>
+            <button class="nav-btn nav-btn-main"><span class="nav-icon">📖</span><span class="nav-label">日记</span></button>
+            <button class="nav-btn nav-btn-icon"><span class="nav-icon">👤</span></button>
+        </div>
+    </nav>
+</div>
+<script>
+// 206:badge 移入导航盒内,纯 CSS 结构锚定,无需 JS
+document.documentElement.style.setProperty('--safe-inset-bottom', '24px');
+</script>
+</body></html>

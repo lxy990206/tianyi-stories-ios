@@ -26,14 +26,23 @@
 
 /* ---------- 安全区规避（全方向，全设备生效） ---------- */
 
+/* 172:全局避让变量(屏幕圆角+手势条最小预留)
+ * --edge-guard:屏幕四角圆角避让边距(定制 ROM 大圆角屏/平板,防贴边 UI 被圆角裁切)
+ * --safe-min-bottom:底部手势条最小预留(部分设备 safe-inset-bottom 为 0/过小,
+ *   贴底按键易被手势条误触,全局兜底加距) */
+:root {
+    --edge-guard: 6px;
+    --safe-min-bottom: 10px;
+}
+
 /* 153:对话页=独立全屏页面,安全区避让由页内输入行自带(旧抽屉 padding 规则移除) */
 
 /* 153:expanded 概念已随全屏页化移除 */
 
-/* 主容器：横屏时左右挖孔/圆角避让（竖屏时 inset 为 0，无副作用） */
+/* 主容器：横屏挖孔/圆角避让(safe-inset) + 四角圆角常量避让(edge-guard) */
 .game-container {
-    padding-left: var(--safe-inset-left, 0px);
-    padding-right: var(--safe-inset-right, 0px);
+    padding-left: calc(var(--safe-inset-left, 0px) + var(--edge-guard, 0px));
+    padding-right: calc(var(--safe-inset-right, 0px) + var(--edge-guard, 0px));
 }
 
 /* HUD 顶/底栏在文档流内，安全区已由 .game-container 的 padding 统一处理，
@@ -47,7 +56,7 @@
 
 /* ---------- 极端比例防护：矮横屏（宽>高 且 高≤500px，含 19:9 横置） ---------- */
 @media (orientation: landscape) and (max-height: 500px) {
-    .chat-scene { height: 24vh; }
+    .chat-scene { flex-basis: 22%; min-height: 110px; max-height: 200px; }
     .modal-card { max-height: 96vh; max-height: 96dvh; }
 }
 
@@ -141,3 +150,79 @@
     .modal-card h2 { font-size: 1.1rem; }
     .save-slot-card { padding: 0.6rem 0.8rem; }
 }
+
+/* ============================================================
+ * v165 三界面多屏适配(浅蓝白主题)
+ * 覆盖:手机(竖/横)、平板、手表;遵循项目规则——流式铺满,仅极端比例防护。
+ * ============================================================ */
+
+/* ---------- 平板/大屏:三界面居中收窄,避免过宽 ---------- */
+@media (min-width: 768px) {
+    /* 171:--card-w 控制 wrap(=卡片)最大宽,立绘锚定 wrap 自动跟随 */
+    #profile-modal { --card-w: 504px; padding: 5vh 12vw; padding-bottom: calc(var(--modal-pb, 15vh) + var(--safe-inset-bottom, 0px)); }  /* 173:原560,-10% */
+    .chat-panel { max-width: 720px; margin: 0 auto; box-shadow: 0 0 60px rgba(0,0,0,0.15); }
+    .bottom-nav { max-width: 720px; margin: 0 auto; left: 50%; transform: translateX(-50%); right: auto; width: 100%; }
+    .hud-top { max-width: 720px; margin: 0 auto; }
+}
+
+/* ---------- 横屏通用优化(非极端矮屏) ---------- */
+@media (orientation: landscape) and (min-height: 501px) {
+    /* 主界面:横屏时立绘区更宽,导航按钮可稍矮 */
+    .scene-root { bottom: 0; }
+    .nav-btn-icon { height: 3rem; }
+    .nav-btn-main { height: 3.1rem; }
+    /* 对话:横屏时场景立绘缩小占比,给消息区更多空间 */
+    .chat-scene { flex-basis: 38%; max-height: 280px; }
+    /* 属性:横屏 wrap 加宽经变量联动(171:立绘锚定 wrap 自动跟随) */
+    #profile-modal { --card-w: 612px; padding: 3vh 8vw; padding-bottom: calc(var(--modal-pb, 15vh) + var(--safe-inset-bottom, 0px)); }  /* 173:原680,-10% */
+    .stat-row-v2 { margin-top: 1.2rem; }
+}
+
+/* ---------- 方形屏(1:1 ~ 4:3)优化 ---------- */
+@media (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) {
+    .chat-scene { flex-basis: 35%; }
+}
+
+/* ---------- 超宽屏(平板横置/折叠屏展开) ---------- */
+@media (min-width: 1024px) and (orientation: landscape) {
+    .game-container { max-width: 1024px; margin: 0 auto; }
+    #profile-modal { --card-w: 540px; padding: 6vh 20vw; padding-bottom: calc(var(--modal-pb, 15vh) + var(--safe-inset-bottom, 0px)); }  /* 173:原600,-10% */
+}
+
+/* ---------- 手表/超小屏(≤320px)极限适配 ---------- */
+@media (max-width: 320px) {
+    .hud-chip { font-size: 0.56rem; padding: 0.15rem 0.4rem; }
+    .hud-chip-btn { font-size: 0.75rem; min-width: 26px; }
+    .nav-btn-icon { height: 2.4rem; }
+    .nav-btn-icon .nav-icon { font-size: 1rem; }
+    .nav-btn-main { height: 2.5rem; gap: 0.15rem; }
+    .nav-btn-main .nav-icon { font-size: 1rem; }
+    .nav-btn-main .nav-label { font-size: 0.65rem; }
+    .chat-titlebar { font-size: 0.78rem; padding: 0.35rem; }
+    .chip { font-size: 0.6rem; padding: 0.12rem 0.35rem; }
+    .chip-bar { width: 30px; height: 7px; }
+    .chat-gift-btn-big { width: 2.2rem; height: 2.2rem; font-size: 0.95rem; }
+    .chat-send-btn { min-width: 3rem; height: 2.2rem; font-size: 0.78rem; }
+    .profile-card-v2 { padding: 0.8rem; border-radius: 14px; }
+    .profile-title-v2 { font-size: 1.1rem; margin: 0.3rem 0 0.8rem; }
+    .stat-label-v2 { font-size: 0.88rem; min-width: 3em; }
+    .stat-bar-big { height: 22px; }
+    .stat-num { font-size: 1rem; }
+}
+
+/* ---------- 高屏(长竖屏)优化:避免属性面板内容过散 ---------- */
+@media (min-height: 800px) and (orientation: portrait) {
+    .stat-row-v2 { margin-top: 2rem; }
+    .stat-row-v2:first-of-type { margin-top: 1.2rem; }
+}
+
+/* ---------- 低性能设备:三界面动画降级 ---------- */
+.low-perf .chat-bubble,
+.low-perf .gift-panel,
+.low-perf .scene-bubble { animation: none !important; }
+.low-perf .stat-fill-big,
+.low-perf .chip-fill { transition: none !important; }
+.low-perf .nav-btn,
+.low-perf .chat-gift-btn-big,
+.low-perf .chat-send-btn,
+.low-perf .profile-close-btn { transition: none !important; }

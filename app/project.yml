@@ -28,7 +28,7 @@
         "base": {
           "PRODUCT_BUNDLE_IDENTIFIER": "wywdcy.luotianyi.tianyi.stories",
           "PRODUCT_NAME": "TianyiStories",
-          "MARKETING_VERSION": "1.1.10",
+          "MARKETING_VERSION": "1.2.3-Bata6",
           "CURRENT_PROJECT_VERSION": "1",
           "TARGETED_DEVICE_FAMILY": "1,2",
           "INFOPLIST_FILE": "TianyiStories/Info.plist",

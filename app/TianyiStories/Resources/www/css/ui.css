@@ -213,6 +213,22 @@
 
 .modal-large { max-width: 640px; }
 
+/* 207:宽屏形态(平板/折叠屏展开/大屏横屏)弹窗加宽——手机档 max-width 不变;
+ * 宽屏若仍限 480/640px,居中卡片两侧是大片暗色背板(用户:大黑边)。
+ * 分档跟随视口,列表/棋盘等内容自然舒展,暗带显著收窄 */
+@media (min-width: 700px) {
+    .modal-card { max-width: 600px; }
+    .modal-large { max-width: 820px; }
+    .modal-saveslots { max-width: 680px; }
+    .modal-tutorial { max-width: 860px; }
+}
+@media (min-width: 1024px) {
+    .modal-card { max-width: 680px; }
+    .modal-large { max-width: 960px; }
+    .modal-saveslots { max-width: 760px; }
+    .modal-tutorial { max-width: 1040px; }
+}
+
 .modal-actions {
     display: flex; justify-content: flex-end; gap: 0.6rem;
     margin-top: 1.2rem;

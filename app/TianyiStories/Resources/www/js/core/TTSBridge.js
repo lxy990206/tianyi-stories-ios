@@ -51,10 +51,15 @@
                 if (tts) tts.onAndroidSpeakDone();
             }
         },
-        onLevel: function (pct) {
+        onLevel: function (pct, form) {
             // 播放电平(1.1.10Beta5/144):Live2D 口型驱动数据源(0~100)
+            // 184:第二参数 form=原生 FFT 元音口型估计(-100~100,Mimo 引擎)——
+            //   低频强=a/o(正,开口音) 中频强=i/e(负,扁口音);其他引擎无此参数时为 undefined
             if (window.globalEventBus) {
-                window.globalEventBus.emit('tts:level', { level: Number(pct) || 0 });
+                window.globalEventBus.emit('tts:level', {
+                    level: Number(pct) || 0,
+                    form: (form === undefined || form === null) ? 0 : Math.max(-1, Math.min(1, Number(form) / 100))
+                });
             }
         }
     };

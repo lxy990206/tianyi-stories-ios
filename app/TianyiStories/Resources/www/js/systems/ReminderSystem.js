@@ -113,7 +113,13 @@ class ReminderSystem {
         const bubble = document.createElement('div');
         bubble.className = 'chat-bubble ai';
         bubble.textContent = text;
-        messages.appendChild(bubble);
+        // 168:经 chatWrapRow 包裹(头像+行容器),与 sendChat/sendGift 路径同构;
+        // 直接 append 会缺头像且气泡 flex 在纵向容器中被压缩→文字溢出
+        if (typeof chatWrapRow === 'function') {
+            messages.appendChild(chatWrapRow('ai', bubble));
+        } else {
+            messages.appendChild(bubble);
+        }
         messages.scrollTop = messages.scrollHeight;
     }
 

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;height:100%;background:#87ceeb}#live2d-page{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}#live2d-canvas{width:100%;height:100%}#live2d-status{position:fixed;top:10px;left:10px;color:#333;font:14px sans-serif}</style>
+</head><body>
+<div id="live2d-page"><canvas id="live2d-canvas"></canvas><div id="live2d-status"></div></div>
+<script>window.__lostCount=0;window.__restoredCount=0;</script>
+<script src="/js/systems/Live2DSystem.js?v=208fix"></script>
+<script>document.getElementById("live2d-canvas").addEventListener("webglcontextlost",function(){window.__lostCount++});</script>
+<script>window.live2dSystem._zoneDebug = false;
+  window.live2dSystem._gazeDebug = true;   // 197:摄像头预览+识别框
+  window.live2dSystem._zoneFilter = null;   // null=全部五区+腹部
+  window.live2dSystem.openPage();</script>
+</body></html>

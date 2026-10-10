@@ -9,7 +9,20 @@ class AsrManager {
         this.state = 'idle';        // idle | requesting_permission | recording | recognizing
         this.engine = 'off';        // off | cloud | device
         this._settings = null;
+        // 205:DOM 目标参数化——同一识别器实例服务聊天页与 Live2D 页两套输入 UI,
+        //     页面侧在点击麦克风时 setDomTarget 绑定本页输入框/按钮/状态条(页面互斥,无状态残留)
+        this._domTarget = { input: 'chat-input', button: 'chat-mic-btn', status: 'chat-status' };
         this._registerNativeCallback();
+    }
+
+    /** 205:切换识别结果落点(输入框 id/麦克风按钮 id/状态条 id),缺省=聊天页三件套 */
+    setDomTarget(inputId, buttonId, statusId) {
+        this._domTarget = {
+            input: inputId || 'chat-input',
+            button: buttonId || 'chat-mic-btn',
+            status: statusId || 'chat-status',
+        };
+        this._syncMicButton();
     }
 
     init(settingsManager) {
@@ -53,7 +66,7 @@ class AsrManager {
     }
 
     _onLevel(percent) {
-        const btn = document.getElementById('chat-mic-btn');
+        const btn = document.getElementById(this._domTarget.button);
         if (btn && this.state === 'recording') {
             btn.style.setProperty('--mic-level', String(Math.max(8, Math.min(100, percent | 0))));
         }
@@ -80,8 +93,6 @@ class AsrManager {
         this.state = 'idle';
         this._syncMicButton();
         this._setStatus('', '');
-        const input = document.getElementById('chat-input');
-        if (!input) return;
         if (!text) {
             window.showToast?.('没有听清,再试一次吗?', 'error');
             return;
@@ -91,6 +102,9 @@ class AsrManager {
         // 专属优化词校正(1.1.12/133):V 家及相关角色名 ASR 同音误标——长词优先,防子串误伤
         text = AsrManager.optimizeTerms(text);
         // 填入输入框供确认/编辑后发送(不自动发送,避免误识别直接发出)
+        // 205:落点=当前 DOM 目标(聊天页 chat-input 或 Live2D 页 l2-chat-input)
+        const input = document.getElementById(this._domTarget.input);
+        if (!input) return;
         input.value = input.value ? input.value + text : text;
         input.focus();
     }
@@ -236,7 +250,7 @@ class AsrManager {
     // ---- UI 辅助 ----
 
     _syncMicButton() {
-        const btn = document.getElementById('chat-mic-btn');
+        const btn = document.getElementById(this._domTarget.button);
         if (!btn) return;
         if (this.engine === 'off' || !window.TianyiASR) {
             btn.style.display = 'none';
@@ -250,7 +264,7 @@ class AsrManager {
     }
 
     _setStatus(text, cls) {
-        const status = document.getElementById('chat-status');
+        const status = document.getElementById(this._domTarget.status);
         if (!status) return;
         status.textContent = text;
         status.className = text ? ('chat-status ' + (cls || '')) : 'chat-status';

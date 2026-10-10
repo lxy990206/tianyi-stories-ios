@@ -1,370 +1,133 @@
-/* ====== HUD 与场景 · Aero Glass + Fluid ====== */
+/* ====== HUD 与场景 · 浅蓝白主题(#66CCFF) ======
+ * v165 重构:按设计图统一三界面为浅蓝白主题;清理历史重复定义(profile-card-v2 曾被定义 3 次)。
+ * 主界面:纯白底+立绘满铺;顶部深灰胶囊条;底部 2×4 蓝色按钮组。
+ */
+
+/* ---------- 主游戏容器 ---------- */
 .game-container {
     position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
-    background: var(--bg);
+    background: #fff;
     overflow: hidden;
     padding-top: var(--safe-inset-top, 0px);
     padding-bottom: var(--safe-inset-bottom, 0px);
+    padding-left: var(--safe-inset-left, 0px);
+    padding-right: var(--safe-inset-right, 0px);
 }
 
-/* HUD 通用毛玻璃 */
+/* ---------- 顶部 HUD 胶囊条 ---------- */
 .hud {
     position: relative; z-index: 20;
     display: flex; align-items: center;
-    padding: 0.6rem 0.8rem;
-    background: rgba(14, 26, 38, 0.55);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border-bottom: 1px solid rgba(123, 196, 232, 0.15);
+    padding: 0.5rem 0.6rem;
+    background: transparent;
     flex-shrink: 0;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
 }
-
-/* 顶部安全区由 .game-container 的 padding-top 统一处理一次（避免双重叠加把 HUD 推离屏顶） */
-.hud-top { gap: 0.5rem; min-height: 42px; padding: 0.4rem 0.6rem; font-size: 0.72rem; }
-.hud-left, .hud-right { display: flex; align-items: center; gap: 0.3rem; }
-.hud-center { flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.9rem; flex-wrap: wrap; }
-
-/* 好感/信任芯片(1.1.10Beta5/138 自底栏迁入顶栏:底栏被聊天面板 z-index 遮挡) */
-.hud-center .hud-stat {
-    padding: 0.15rem 0.5rem;
-    background: rgba(6, 13, 20, 0.5);
-    border-radius: 6px;
-    border: 1px solid rgba(63,169,214,0.12);
-    gap: 0.35rem;
-    min-width: 96px;
+.hud-top {
+    flex-wrap: nowrap; overflow: hidden;
+    gap: 0.4rem;
+    min-height: 42px;
+    padding: 0.45rem 0.6rem;
+    /* 206:显示项组永远水平居中——此前 flex 默认左对齐,宽屏右侧大片空白=视觉左右乱跑 */
+    justify-content: center;
 }
-.hud-center .hud-stat-bar { width: 56px; flex: none; height: 5px; }
-.hud-center .hud-stat-label { font-size: 0.66rem; }
-.hud-center .hud-stat-value { font-size: 0.66rem; min-width: 18px; text-align: right; color: var(--ink); }
-
-.hud-day, .hud-time, .hud-coin, .hud-actions-left {
-    color: var(--ink); font-size: 0.72rem; font-weight: 500;
-    padding: 0.2rem 0.5rem;
-    background: rgba(6, 13, 20, 0.5);
+.hud-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.28rem 0.75rem;
+    background: rgba(120, 130, 145, 0.7);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border-radius: 6px;
-    border: 1px solid rgba(63,169,214,0.12);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03);
-}
-.hud-time { color: var(--accent2); }
-.hud-coin { color: var(--warning); }
-.hud-actions-left { color: var(--accent); }
-
-.hud-date {
-    color: var(--muted);
-    font-size: 0.68rem;
-    padding: 0.15rem 0.4rem;
-    background: rgba(6, 13, 20, 0.35);
-    border-radius: 6px;
-    border: 1px solid rgba(63,169,214,0.08);
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff; font-size: 0.74rem; font-weight: 600;
     white-space: nowrap;
+    font-family: inherit;
 }
+.hud-chip-btn {
+    cursor: pointer; font-size: 0.9rem;
+    min-width: 32px; padding: 0.28rem 0.5rem;
+}
+.hud-chip-btn:active { transform: scale(0.94); }
 
-.hud-btn {
-    background: rgba(6, 13, 20, 0.5);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(63,169,214,0.12);
-    border-radius: 6px;
-    width: 32px; height: 32px; font-size: 16px;
-    color: var(--muted);
-    transition: all var(--transition);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-.hud-btn:hover {
-    color: var(--accent); border-color: var(--accent);
-    background: rgba(63,169,214,0.12);
-    box-shadow: 0 4px 12px rgba(63,169,214,0.2);
-}
-
-/* 底部 HUD - 绝对定位 */
-.hud-bottom {
-    position: absolute;
-    bottom: 66px; left: 0; right: 0;
-    z-index: 20;
-    border-top: 1px solid rgba(123, 196, 232, 0.15);
-    background: rgba(14, 26, 38, 0.55);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 0.6rem; padding: 0.4rem 0.7rem;
-    min-height: 40px;
-    font-size: 0.7rem;
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-.hud-stat { display: flex; align-items: center; gap: 0.5rem; }
-
-.hud-stat-label {
-    color: var(--muted); font-size: 0.68rem; min-width: 24px;
-}
-
-.hud-stat-bar {
-    flex: 1; height: 6px;
-    background: rgba(6, 13, 20, 0.6);
-    border-radius: 3px; overflow: hidden;
-    position: relative;
-    border: 1px solid rgba(63,169,214,0.08);
-}
-
-.hud-stat-fill {
-    height: 100%; border-radius: 3px;
-    transition: width 400ms cubic-bezier(0.2, 0.7, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.hud-stat-fill::after {
-    content: '';
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: statShimmer 3s ease-in-out infinite;
-}
-
-@keyframes statShimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(200%); }
-}
-
-.hud-stat-fill.affection {
-    background: linear-gradient(90deg, var(--warm), var(--accent3));
-    box-shadow: 0 0 8px rgba(244,182,194,0.4);
-}
-.hud-stat-fill.trust {
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    box-shadow: 0 0 8px rgba(63,169,214,0.4);
-}
-
-.hud-stat-value {
-    color: var(--ink); font-size: 0.72rem;
-    font-weight: 600; min-width: 20px; text-align: right;
-}
-
-/* 场景画布 - 顶部对齐HUD下沿 */
+/* ---------- 场景画布(立绘满铺) ---------- */
 .scene-root {
     position: absolute;
     top: 42px;
-    bottom: 106px;
+    bottom: 0;
     left: 0; right: 0;
     overflow: hidden;
     background: #fff;
 }
-
-/* 流体场景背景 */
-.scene-fluid {
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
-    overflow: hidden; pointer-events: none;
-    z-index: 1;
-}
-
-.scene-fluid .blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(50px);
-    opacity: 0.35;
-}
-
-.scene-fluid .blob:nth-child(1) {
-    width: 40vmax; height: 40vmax;
-    background: radial-gradient(circle, rgba(63,169,214,0.3) 0%, transparent 70%);
-    top: -10%; left: 20%;
-    animation: blobDrift1 16s ease-in-out infinite alternate;
-}
-.scene-fluid .blob:nth-child(2) {
-    width: 35vmax; height: 35vmax;
-    background: radial-gradient(circle, rgba(244,182,194,0.2) 0%, transparent 70%);
-    bottom: 0; right: 10%;
-    animation: blobDrift2 20s ease-in-out infinite alternate;
-}
-.scene-fluid .blob:nth-child(3) {
-    width: 25vmax; height: 25vmax;
-    background: radial-gradient(circle, rgba(123,196,232,0.2) 0%, transparent 70%);
-    top: 30%; left: 60%;
-    animation: blobDrift3 22s ease-in-out infinite alternate;
-}
+.scene-fluid { display: none; } /* 设计图为纯白底,移除流体动画 */
 
 .character-layer {
     position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
     pointer-events: none; z-index: 5;
 }
-
 #character-image {
-    /* 151:等比拉伸铺满屏幕(cover,顶部对齐保头部,裁去超出) */
     position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
     width: 100%; height: 100%;
-    object-fit: cover;
-    object-position: center top;
+    /* 207:contain 居中等比(用户要求:立绘随屏幕形态变化始终完整居中,等比缩放)——
+     * 此前 cover+center top 铺满裁切,宽屏(平板/横屏/折叠屏展开)裁切率极高;
+     * contain=整图可见+水平垂直居中,留白由场景白底承接(scene-root background:#fff) */
+    object-fit: contain;
+    object-position: center;
     pointer-events: auto;
 }
-
 #character-image.bounce { animation: charBounce 600ms ease; }
-
 @keyframes charBounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-14px); }
 }
 
+/* 场景气泡(主界面互动提示) */
 .scene-bubble {
     position: absolute;
-    top: 18%; left: 50%;
+    top: 14%; left: 50%;
     transform: translateX(-50%);
-    background: rgba(14, 26, 38, 0.7);
-    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(123, 196, 232, 0.3);
-    border-radius: var(--radius);
-    padding: 0.6rem 1.2rem;
-    color: var(--ink); max-width: 75%; text-align: center;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(102, 204, 255, 0.4);
+    border-radius: 14px;
+    padding: 0.5rem 1rem;
+    color: #0d2b3e; max-width: 75%; text-align: center;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     z-index: 10;
     animation: bubbleFloat 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
+    font-size: 0.88rem; font-weight: 600;
 }
-
 .scene-outfit-badge {
     position: absolute;
-    bottom: 8px; left: 50%;
+    /* 206:恒距根修——badge 移入 #bottom-nav 盒内,bottom:100%=导航盒顶:
+     * 间距=固定 0.45rem,由 DOM 结构保证,横竖屏/媒体查询降高/安全区/字体缩放
+     * 全部自动跟随(此前 175 的 130px 魔法常数+inset 估算,各屏间距不一致)。
+     * 导航无 overflow:hidden,badge 悬于其上正常可见;z-index 随导航(30)高于场景 */
+    bottom: calc(100% + 0.45rem); left: 50%;
     transform: translateX(-50%);
     align-items: center;
     gap: 0.4rem;
-    background: rgba(6, 13, 20, 0.55);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(244, 182, 194, 0.25);
+    background: rgba(102, 204, 255, 0.85);
+    border: 1px solid rgba(255,255,255,0.5);
     border-radius: 999px;
     padding: 0.3rem 0.9rem;
-    color: var(--accent3);
-    font-size: 0.78rem; font-weight: 600;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+    color: #0d2b3e;
+    font-size: 0.78rem; font-weight: 700;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
     z-index: 9;
     white-space: nowrap;
     pointer-events: none;
-    animation: bubbleFloat 320ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
-
-.scene-bubble::after {
-    content: '';
-    position: absolute; bottom: -10px; left: 50%;
-    transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid rgba(123, 196, 232, 0.3);
-}
-
 @keyframes bubbleFloat {
-    from { transform: translate(-50%, -12px); opacity: 0; filter: blur(2px); }
-    to { transform: translate(-50%, 0); opacity: 1; filter: blur(0px); }
+    from { transform: translate(-50%, -12px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
 }
 
-/* 行动面板 - 绝对定位 */
-.action-panel {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    z-index: 20;
-    background: rgba(14, 26, 38, 0.6);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border-top: 1px solid rgba(123, 196, 232, 0.15);
-    padding: 0.4rem 0.4rem calc(0.5rem + var(--safe-inset-bottom, 0px));
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-.action-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 0.3rem;
-}
-
-.btn-action {
-    flex-direction: column; gap: 0.1rem;
-    padding: 0.4rem 0.1rem;
-    background: rgba(27, 56, 82, 0.3);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(63,169,214,0.1);
-    color: var(--ink-soft); font-size: 0.65rem;
-    min-height: 38px;
-    border-radius: 8px;
-    transition: all var(--transition);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    position: relative;
-    overflow: hidden;
-}
-
-.btn-action::before {
-    content: '';
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
-    background: radial-gradient(circle at 50% 80%, rgba(63,169,214,0.15) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity var(--transition);
-}
-
-.btn-action:hover:not(:disabled) {
-    background: rgba(63,169,214,0.15);
-    border-color: var(--accent);
-    color: var(--accent2);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(63,169,214,0.2);
-}
-.btn-action:hover:not(:disabled)::before { opacity: 1; }
-
-.btn-action:active:not(:disabled) {
-    transform: translateY(0) scale(0.95);
-}
-
-.btn-action:disabled { opacity: 0.35; }
-
-/* ====== 小屏设备适配（手表等） ====== */
-@media (max-height: 600px), (max-width: 360px) {
-    .hud-top { min-height: 32px; padding: 0.2rem 0.4rem; font-size: 0.62rem; gap: 0.3rem; }
-    .hud-btn { width: 24px; height: 24px; font-size: 12px; }
-    .hud .chunk { padding: 0.1rem 0.3rem; }
-    .scene-root { top: 32px; bottom: 72px; }
-    .character-layer { padding-top: 10px; }
-    .hud-bottom { bottom: 42px; min-height: 28px; padding: 0.2rem 0.4rem; font-size: 0.6rem; gap: 0.3rem; }
-    .hud-stat-bar { height: 4px; }
-    .hud-stat-label { font-size: 0.58rem; min-width: 18px; }
-    .hud-stat-value { font-size: 0.62rem; min-width: 14px; }
-    .action-panel { padding: 0.2rem 0.2rem 0.3rem; }
-    .action-grid { gap: 0.2rem; }
-    .btn-action { min-height: 28px; font-size: 0.55rem; padding: 0.2rem 0.1rem; border-radius: 6px; }
-    .chat-panel { padding: 0.4rem; max-height: 80vh; }
-    .chat-messages { max-height: 50vh; }
-    .chat-bubble { font-size: 0.85rem; padding: 0.4rem 0.6rem; }
-    .chat-input-row textarea { min-height: 28px; font-size: 0.85rem; }
-    .chat-header { padding: 0.2rem 0.3rem; }
-    .chat-header-title { font-size: 0.75rem; }
-    .scene-outfit-badge { font-size: 0.65rem; padding: 0.2rem 0.6rem; bottom: 4px; }
-}
-
-
-/* ---------- 主界面改版(1.1.10Beta5/144):顶部胶囊条 + 底部 2×4 导航 + Live2D ---------- */
-.hud-chip {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 0.28rem 0.75rem;
-    background: rgba(120, 130, 145, 0.55);
-    border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #fff; font-size: 0.72rem; font-weight: 600;
-    white-space: nowrap;
-}
-.hud-chip-btn {
-    cursor: pointer; font-size: 0.85rem;
-    font-family: inherit;
-}
-.hud-top { flex-wrap: nowrap; overflow: hidden; gap: 0.4rem; }
-
-#live2d-layer {
-    position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
-    z-index: 4; pointer-events: none;
-}
-#live2d-canvas { width: 100%; height: 100%; display: block; }
-
+/* ---------- 底部 2×4 导航 ---------- */
 .bottom-nav {
     position: absolute; bottom: 0; left: 0; right: 0;
     z-index: 30;
-    padding: 0.3rem 0.5rem calc(0.45rem + var(--safe-inset-bottom, 0px));
+    /* 172:底部手势条避让=安全区+最小预留(防设备 inset=0 时按键贴底误触) */
+    padding: 0.3rem 0.5rem calc(0.45rem + var(--safe-min-bottom, 0px) + var(--safe-inset-bottom, 0px));
+    background: linear-gradient(to top, rgba(255,255,255,0.85) 60%, rgba(255,255,255,0));
 }
-/* 150:双行容器,每行=小方钮+大矩形钮+大矩形钮+小方钮 */
 .nav-row {
     display: flex;
     justify-content: space-between;
@@ -374,16 +137,18 @@
 .nav-btn {
     padding: 0;
     display: flex; align-items: center; justify-content: center;
-    background: rgba(123, 196, 232, 0.42);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: #66CCFF;
+    border: 1.5px solid rgba(255,255,255,0.6);
     border-radius: 14px;
-    color: #10344a; font-family: inherit;
+    color: #0d2b3e; font-family: inherit;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(102,204,255,0.3);
+    transition: transform 0.12s, box-shadow 0.12s;
 }
-.nav-btn:active { transform: scale(0.96); }
+.nav-btn:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(102,204,255,0.2); }
 .nav-icon { font-size: 1.3rem; line-height: 1.2; }
 .nav-label { font-size: 0.86rem; font-weight: 700; }
-/* 150 严格按图:两侧=小方形钮(近正方形,纯图标);中间=大矩形钮(横排图标+文字) */
+/* 两侧小方形钮(纯图标);中间大矩形钮(图标+文字) */
 .nav-btn-icon {
     width: 20%;
     height: 3.3rem;
@@ -397,190 +162,363 @@
 }
 .nav-btn-main .nav-icon { font-size: 1.3rem; }
 .nav-btn-main .nav-label { font-size: 0.86rem; }
+.nav-img { width: 1.35rem; height: auto; display: block; }
+.nav-profile-slot { display: inline-block; width: 1.5rem; height: 1.5rem; border-radius: 50%; overflow: hidden; }
+.nav-profile-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.nav-profile-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 
-.profile-stat { min-width: 140px; }
-.profile-stat .hud-stat-bar { width: 90px; }
-.game-list { display: flex; flex-direction: column; }
-.game-list .game-entry { margin-top: 0.5rem; text-align: left; }
-
-.gomoku-board {
-    display: grid;
-    grid-template-columns: repeat(15, 1fr);
-    width: min(92vw, 420px);
-    height: min(92vw, 420px);
-    margin: 0 auto;
-    background: #e8c88f;
-    border: 2px solid #8a6a3a;
-    border-radius: 4px;
-    overflow: hidden;
-}
-.gomoku-cell {
-    padding: 0; margin: 0;
-    border: 1px solid rgba(90, 60, 20, 0.35);
-    background: transparent;
-    font-size: 0.72rem; line-height: 1;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; font-family: inherit;
-}
-
-
-/* ---------- 角色属性面板(1.1.10Beta5/146):纯属性模块,按用户设计图 ---------- */
-.profile-card-v2 {
-    position: relative;
-    width: min(88vw, 420px);
-    min-height: 60vh;
-    background: #45b6fe;
-    border: 2px solid #1b5f88;
-    border-radius: 22px;
-    padding: 1.1rem 1.2rem 1.3rem;
-    display: flex; flex-direction: column;
-}
-.profile-title-v2 {
-    text-align: center;
-    color: #0d2b3e; font-size: 1.5rem; font-weight: 800;
-    margin: 0.4rem 0 2.2rem;
-}
-.profile-close-btn {
-    position: absolute; top: 0.7rem; right: 0.7rem;
-    width: 2rem; height: 2rem;
-    border-radius: 50%;
-    background: #d9534f; border: 2px solid #a83a36;
-    color: #fff; font-size: 0.95rem; font-weight: 700;
-    cursor: pointer; font-family: inherit;
-    line-height: 1;
-}
-.stat-row-v2 {
-    display: flex; align-items: center;
-    margin-top: 1.4rem;
-}
-.stat-row-v2 > * + * { margin-left: 0.6rem; }
-.stat-label-v2 {
-    flex: none; width: 4.6em;
-    color: #0d2b3e; font-size: 1.18rem; font-weight: 800;
-}
-.stat-bar-big {
-    flex: 1; height: 34px;
-    background: #d9f2ff;
-    border: 2px solid #1b5f88;
-    border-radius: 999px; overflow: hidden;
-}
-.stat-fill-big { height: 100%; background: #f04e98; border-radius: 999px; transition: width 300ms ease; }
-.stat-num {
-    flex: none; min-width: 2.2em; text-align: right;
-    color: #0d2b3e; font-size: 1.3rem; font-weight: 800;
-}
-.profile-art-box {
-    margin-top: auto;
-    padding-top: 1.2rem;
-    display: flex; justify-content: flex-start;
-}
-.profile-art-box img {
-    width: min(46%, 190px);
-    object-fit: contain;
-    display: block;
-    -webkit-user-drag: none;
-}
-
-
-/* ---------- 147 修正:属性面板=独立全屏页面(非弹窗叠层) ---------- */
-/* ---------- 角色属性面板(155 严格按设计图重建):整页浅蓝,仅三属性条+立绘+红圈关闭 ---------- */
-#profile-modal.profile-page {
+/* ---------- 角色属性面板(属性界面) ----------
+ * 设计图:浅蓝整页+圆角卡片;粉进度条;红圈关闭;底部一张立绘。
+ * v165:合并历史 3 次重复定义为单一干净实现。
+ * 171:锚层方案(替代 170 视口公式)——.profile-wrap 与卡片同尺寸,
+ *   立绘 absolute 锚定 wrap 左下角:卡片/wrap 随屏幕如何变(media 变量、
+ *   自定义宽高),立绘都出现在卡片左下角正确位置,不会脱离卡片漂移;
+ *   卡片与立绘仍为 wrap 内平级独立元素,样式互不污染,可各自单独调整
+ *   (给卡片加 transform 只动卡片,整体移动调 wrap)。
+ * 变量:--card-w(wrap 最大宽) / --modal-pb(modal 底 padding,给跨边框
+ *   半身留显示空间)。media 只改变量即自动联动。
+ */
+#profile-modal {
     position: fixed;
     top: 0; right: 0; bottom: 0; left: 0; inset: 0;
-    background: #45b6fe;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: #66CCFF;
     z-index: 200;
     display: none;
     justify-content: center;
     align-items: center;
-    padding: 5vh 6vw;
+    --card-w: 468px;    /* 173:边框缩小10%(原520),立绘尺寸/相对位置不变,防溢出 */
+    --modal-pb: 28vh;   /* 173:立绘放大1倍后越界半身增高,底 padding 需给足显示空间 */
+    /* 172:顶部挖孔/刘海避让(safe-inset-top 由 MainActivity 注入,无挖孔设备为 0) */
+    padding: calc(4vh + var(--safe-inset-top, 0px)) 7vw calc(var(--modal-pb, 15vh) + var(--safe-inset-bottom, 0px)) 7vw;  /* 173:水平5vw→7vw,给立绘左越界留更多空间 */
 }
-.profile-card-v2 {
+/* 锚层:与卡片同尺寸(水平居中由 modal flex 处理)
+ * 173:高度 90%(原100%)——边框整体缩小10%,立绘锚定 wrap 左下角随之上移,防底部溢出 */
+.profile-wrap {
     position: relative;
     width: 100%;
-    max-width: 560px;
-    height: 100%;
-    background: #45b6fe;
-    border: 2px solid #0d2b3e;
-    border-radius: 12px;
-    padding: 1.4rem 1.6rem 1.4rem;
+    max-width: var(--card-w, 468px);
+    height: 90%;
+}
+.profile-card-v2 {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;   /* 填满 wrap(四边双写,老 WebView 规则) */
+    background: #66CCFF;
+    border: 2.5px solid #0d2b3e;
+    border-radius: 22px;
+    padding: 1.4rem 1.6rem 1.2rem;
     display: flex; flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
 }
 .profile-title-v2 {
     text-align: center;
     color: #0d2b3e;
     font-size: 1.7rem; font-weight: 800;
-    margin: 0.8rem 0 0;
+    margin: 0.6rem 0 1.5rem;
 }
 .profile-close-btn {
-    position: absolute; top: 1rem; right: 1rem;
-    width: 2.6rem; height: 2.6rem;
+    position: absolute; top: 0.9rem; right: 0.9rem;
+    width: 2.5rem; height: 2.5rem;
     border-radius: 50%;
     background: #8f8f8f;
     border: none;
     color: #d0342c;
-    font-size: 1.3rem; font-weight: 800;
+    font-size: 1.25rem; font-weight: 800;
     cursor: pointer; font-family: inherit;
     line-height: 1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.15s;
 }
+.profile-close-btn:active { transform: scale(0.9); }
 .stat-row-v2 {
     display: flex; align-items: center;
-    margin-top: 3.2rem;
+    margin-top: 1.6rem;
 }
-.stat-row-v2:first-of-type { margin-top: 4.5rem; }
+.stat-row-v2:first-of-type { margin-top: 0.8rem; }
 .stat-row-v2 > * + * { margin-left: 0.7rem; }
 .stat-label-v2 {
     flex: none;
-    color: #0d2b3e; font-size: 1.25rem; font-weight: 800;
+    color: #0d2b3e; font-size: 1.2rem; font-weight: 800;
+    min-width: 4.2em;
 }
 .stat-bar-big {
-    flex: 1; height: 34px;
+    flex: 1; height: 32px;
     background: #ffffff;
-    border: 2px solid #0d2b3e;
+    border: 2.5px solid #0d2b3e;
     border-radius: 999px; overflow: hidden;
 }
-.stat-fill-big { height: 100%; background: #f0509a; border-radius: 999px; }
+.stat-fill-big {
+    height: 100%;
+    background: #f0509a;
+    border-radius: 999px;
+    transition: width 400ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
 .stat-num {
     flex: none; min-width: 2em; text-align: right;
-    color: #0d2b3e; font-size: 1.5rem; font-weight: 800;
+    color: #0d2b3e; font-size: 1.4rem; font-weight: 800;
 }
+/* 173:立绘破框效果——
+ *   1) 放大1倍:width 40%→80%,max-width 190→380,max-height 26vh→52vh
+ *   2) 左侧超框50%:left:0 贴卡片左边沿 + translateX(-50%) 左移自身半宽
+ *      →立绘中线对齐卡片左边沿,半幅在框外左侧
+ *   3) 下部超框50%:bottom:0 贴卡片底边沿 + translateY(50%) 下移自身半高
+ *      →立绘中线对齐卡片底边沿,半幅在框外下方
+ *   合 transform: translate(-50%,50%) 即左下角破框构图。
+ * wrap 随屏幕/媒体变量变化时立绘自动跟随,永不错位;
+ * 无 min()/max()/视口公式,全部传统语法,Chrome 59 基线原生可用。 */
 .profile-art-box {
-    margin-top: auto;
-    padding-top: 1.5rem;
+    position: absolute;
+    left: 0; bottom: 0;
+    width: 85%;                  /* 173:边框-10%后提至85%(原80%),保证立绘仍命中max-width:380不缩小 */
+    max-width: 380px;            /* 立绘尺寸不变 */
+    margin: 0; padding: 0;
     display: flex; justify-content: flex-start;
+    transform: translate(-50%, 50%);  /* 左超框50% + 下超框50% */
+    pointer-events: none;   /* 不挡卡片内点击 */
+    z-index: 2;              /* 浮于卡片边框之上 */
 }
 .profile-art-box img {
-    width: min(44%, 200px);
+    width: 100%;
+    max-height: 52vh;        /* 173:放大1倍(原26vh) */
     object-fit: contain;
+    object-position: bottom; /* 立绘脚底贴边,不裁头 */
     display: block;
     -webkit-user-drag: none;
 }
 
+/* ---------- 游戏/活动弹窗列表 ---------- */
+.game-list { display: flex; flex-direction: column; }
+.game-list .game-entry { margin-top: 0.5rem; text-align: left; }
 
-/* ---------- 147 修正:属性面板=独立全屏页面(非弹窗叠层) ---------- */
-#profile-modal {
-    position: fixed;
-    top: 0; right: 0; bottom: 0; left: 0; inset: 0;
-    background: #45b6fe;
+/* ---------- 五子棋(小游戏;211 重构:Canvas 交叉点棋盘,棋子落交点非格子) ---------- */
+.gomoku-levels {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0.2rem 0 0.6rem;
+}
+.gomoku-level {
+    flex: 1 1 0;
+    max-width: 6rem;
+    padding: 0.4rem 0.2rem;
+    opacity: 0.55;
+}
+.gomoku-level.active {
+    opacity: 1;
+    font-weight: 800;
+    border-color: #66CCFF;
+    background: rgba(102, 204, 255, 0.25);
+}
+.gomoku-board {
+    display: block;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0, 30, 60, 0.2);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* ---------- Live2D 专属页面 ---------- */
+#live2d-page {
+    position: relative;
+    width: 100%; height: 100%;
+    background: #66CCFF;
     z-index: 200;
     display: none;
+    align-items: center;
     justify-content: center;
-    align-items: stretch;
-    padding: 4vh 3vw calc(3vh + var(--safe-inset-bottom, 0px));
 }
-.profile-card-v2 {
-    width: 100%;
-    max-width: 560px;
-    min-height: unset;
-    height: 100%;
-    background: #45b6fe;
-    border: 2px solid #0d2b3e;
-    border-radius: 26px;
+#live2d-canvas {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0;
+    width: 100%; height: 100%; display: block;
 }
-.profile-art-box { justify-content: center; }
-.profile-art-box img { width: min(52%, 240px); }
+.live2d-status {
+    position: absolute;
+    left: 1rem; right: 1rem; top: 50%;
+    transform: translateY(-50%);
+    text-align: center;
+    color: #0d2b3e; font-size: 0.95rem; font-weight: 700;
+    pointer-events: none;
+}
+.live2d-close {
+    position: absolute; top: calc(0.8rem + var(--safe-inset-top, 0px)); right: 0.8rem;
+    width: 2.6rem; height: 2.6rem;
+    border-radius: 50%;
+    background: #8f8f8f; border: none;
+    color: #d0342c; font-size: 1.3rem; font-weight: 800;
+    cursor: pointer; font-family: inherit; line-height: 1;
+    z-index: 2;
+}
 
-/* 149:天依属性按钮图片位(用户稍后提供洛天依图,当前留空) */
-.nav-profile-slot { display: inline-block; width: 1.5rem; height: 1.5rem; border-radius: 50%; }
-.nav-profile-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+/* ---------- 全屏页面锁定(页面打开时隐藏主容器) ---------- */
+body.page-open #game-container { display: none; }
+body.page-open { overflow: hidden; }
+
+/* ---------- 小屏设备适配(手表/极窄) ---------- */
+@media (max-width: 360px) {
+    .hud-top { min-height: 34px; padding: 0.3rem 0.4rem; font-size: 0.62rem; gap: 0.3rem; }
+    .hud-chip { font-size: 0.62rem; padding: 0.2rem 0.5rem; }
+    .scene-root { top: 34px; }
+    .nav-btn-icon { height: 2.8rem; }
+    .nav-btn-icon .nav-icon { font-size: 1.2rem; }
+    .nav-btn-main { height: 2.9rem; }
+    .nav-btn-main .nav-label { font-size: 0.72rem; }
+    .profile-card-v2 { padding: 1rem; border-radius: 16px; }
+    .profile-title-v2 { font-size: 1.3rem; margin: 0.4rem 0 1rem; }
+    .stat-row-v2 { margin-top: 1.1rem; }
+    .stat-label-v2 { font-size: 1rem; min-width: 3.5em; }
+    .stat-bar-big { height: 26px; }
+    .stat-num { font-size: 1.15rem; }
+}
+
+/* ---------- 矮横屏防护 ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+    .nav-row + .nav-row { margin-top: 0.25rem; }
+    .nav-btn-icon { height: 2.6rem; }
+    .nav-btn-main { height: 2.7rem; }
+    .bottom-nav { padding-bottom: calc(0.35rem + var(--safe-inset-bottom, 0px)); }
+    /* 170:删 max-height(卡片须填满 content-box 保证底边=立绘基准);padding 不影响外沿 */
+    .profile-card-v2 { padding: 0.8rem 1.2rem; }
+    .profile-title-v2 { font-size: 1.2rem; margin: 0.3rem 0 0.6rem; }
+    .stat-row-v2 { margin-top: 0.8rem; }
+    .profile-art-box img { width: 100%; max-height: 48vh; }  /* 173:放大1倍(原24vh) */
+}
+
+/* 186 触摸 AI 回复浮层气泡已移除(209:触摸回复与对话统一走 l2-chat-flow 气泡槽) */
+
+/* 209:Live2D 启动提示页——居中 124×124 无声加载视频(用户指定尺寸,去音频)+
+ 文字「正在召唤洛天依。。。」;加载完成由 openPage finally 隐藏,z1 压画布不挡关闭钮(z2) */
+.l2-loading {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9rem;
+    background: #66CCFF;
+    z-index: 1;
+}
+.l2-loading-video {
+    width: 124px; height: 124px;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 6px 22px rgba(0, 30, 60, 0.25);
+    background: rgba(255, 255, 255, 0.5);
+}
+.l2-loading-text {
+    color: #0d2b3e;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+/* ---------- 205:Live2D 页底部文字+ASR 交互条与对话气泡流 ---------- */
+/* 多屏适配:左右=--edge-guard 圆角避让,底部=手势条/导航安全区+最小预留(同 172 全局规则);
+   横屏矮屏媒体查询降高;气泡流 pointer-events:none 不挡模型触摸分区 */
+.l2-chat-bar {
+    position: absolute;
+    left: calc(0.8rem + var(--edge-guard, 0px));
+    right: calc(0.8rem + var(--edge-guard, 0px));
+    bottom: calc(0.7rem + var(--safe-inset-bottom, 0px) + var(--safe-min-bottom, 0px));
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(255, 255, 255, 0.85);
+    border: 2px solid #7fb8e8;
+    border-radius: 24px;
+    padding: 0.35rem 0.45rem 0.35rem 0.55rem;
+    box-shadow: 0 4px 18px rgba(0, 30, 60, 0.18);
+    z-index: 210;
+}
+.l2-chat-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: #0d2b3e;
+    padding: 0.35rem 0.1rem;
+}
+.l2-chat-input::placeholder { color: #6d95ad; }
+.l2-mic-btn, .l2-send-btn {
+    flex: 0 0 auto;
+    width: 2.4rem; height: 2.4rem;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+}
+.l2-mic-btn {
+    background: #e8f4ff;
+    color: #2a6f97;
+}
+.l2-mic-btn.recording { background: #ffd9d6; color: #d0342c; animation: l2micPulse 1s ease-in-out infinite; }
+.l2-mic-btn.busy { opacity: 0.55; }
+@keyframes l2micPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(208, 52, 44, 0.35); }
+    50% { box-shadow: 0 0 0 8px rgba(208, 52, 44, 0); }
+}
+.l2-send-btn {
+    background: #66CCFF;
+    color: #fff;
+    font-weight: 800;
+}
+.l2-send-btn:active { background: #4db8f0; }
+
+/* 对话气泡流:209 改为统一气泡槽——触摸回复与对话回复同一位置,容器内至多一个气泡
+ (最新一条 AI 回复;用户消息不驻留),10s 无新内容加 .hide 淡出后移除 */
+.l2-chat-flow {
+    position: absolute;
+    left: calc(0.9rem + var(--edge-guard, 0px));
+    right: calc(0.9rem + var(--edge-guard, 0px));
+    bottom: calc(4.4rem + var(--safe-inset-bottom, 0px) + var(--safe-min-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;          /* 不挡画布触摸分区 */
+    z-index: 205;
+}
+.l2-msg {
+    max-width: 82%;
+    border-radius: 14px;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: #0d2b3e;
+    animation: l2msgIn 0.28s ease-out;
+    word-break: break-word;
+}
+.l2-msg.ai {
+    align-self: flex-start;
+    /* 用户指定:回复气泡透明度 60% */
+    background: rgba(255, 255, 255, 0.6);
+    border: 1.5px solid rgba(127, 184, 232, 0.8);
+}
+.l2-msg.user {
+    align-self: flex-end;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1.5px solid #a9d4f2;
+}
+.l2-msg.loading { color: #5a7f95; }
+/* 209:10s 无新内容淡出(forwards 保持透明至移除) */
+.l2-msg.hide { animation: l2msgOut 0.4s ease-in forwards; }
+@keyframes l2msgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes l2msgOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(8px); }
+}
+
+/* 横屏矮屏(手机横持/折叠内屏):降条高与气泡高度占比,防遮挡模型面部 */
+@media (orientation: landscape) and (max-height: 500px) {
+    .l2-chat-bar { bottom: calc(0.45rem + var(--safe-inset-bottom, 0px) + var(--safe-min-bottom, 0px)); }
+    .l2-chat-input { font-size: 0.85rem; padding: 0.2rem 0.1rem; }
+    .l2-mic-btn, .l2-send-btn { width: 2rem; height: 2rem; font-size: 0.92rem; }
+    .l2-chat-flow { bottom: calc(3.6rem + var(--safe-inset-bottom, 0px) + var(--safe-min-bottom, 0px)); }
+    .l2-msg { font-size: 0.82rem; padding: 0.35rem 0.6rem; }
+}
+

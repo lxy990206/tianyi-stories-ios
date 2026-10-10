@@ -288,9 +288,13 @@ async function initGame() {
             });
         }
         // 初始化 AI
-        if (window.aiChatManager) await window.aiChatManager.init();
+        // 211:桥接初始化浏览器环境可能抛错——try/catch 防御,失败不阻断 boot
+        //     (真机桥可用时行为不变;纯浏览器继续完成引擎构建)
+        try { if (window.aiChatManager) await window.aiChatManager.init(); }
+        catch (e) { console.warn('[启动] AI 初始化跳过(浏览器环境):', e && e.message); }
         // 初始化记忆
-        if (window.memoryBridge) await window.memoryBridge.init();
+        try { if (window.memoryBridge) await window.memoryBridge.init(); }
+        catch (e) { console.warn('[启动] 记忆桥初始化跳过(浏览器环境):', e && e.message); }
 
         // 构建引擎
         gameEngine = new GameEngine();
@@ -329,7 +333,21 @@ async function initGame() {
         const asrManager = new AsrManager();
         window.asrManager = asrManager;
         asrManager.init(settingsManager);
-        document.getElementById('chat-mic-btn')?.addEventListener('click', () => asrManager.toggleRecord());
+        // 205:识别结果落点在点击时绑定本页三件套(聊天页/Live2D 页共用同一识别器,页面互斥)
+        document.getElementById('chat-mic-btn')?.addEventListener('click', () => {
+            asrManager.setDomTarget('chat-input', 'chat-mic-btn', 'chat-status');
+            asrManager.toggleRecord();
+        });
+        document.getElementById('l2-mic-btn')?.addEventListener('click', () => {
+            asrManager.setDomTarget('l2-chat-input', 'l2-mic-btn', 'live2d-status');
+            asrManager.toggleRecord();
+        });
+        // 209:触摸反馈回复接入统一气泡槽——Live2DSystem._bubble 经 l2:bubble 事件到此渲染,
+        //     与对话回复同一位置同一样式;'…'=思考占位,''=清除
+        window.globalEventBus && window.globalEventBus.on('l2:bubble', (e) => {
+            const t = (e && e.text) || '';
+            showL2Bubble(t === '…' ? '…' : t, { loading: t === '…' });
+        });
 
         const timeSystem = new TimeSystem();
         const characterSystem = new CharacterSystem();
@@ -409,8 +427,6 @@ async function initGame() {
         isGameInitialized = true;
         showWelcomeMessage();
 
-        // Live2D(144):按持久化开关启动(极低配自动回退静态立绘)
-        if (window.live2dSystem) window.live2dSystem.boot();
         // 主动问候(139):好感≥50 且当日首次登录(清醒时段 8~22 点)→天依主动开口
         setTimeout(() => {
             if (window.aiChatManager && window.aiChatManager.maybeProactiveGreeting) {
@@ -516,7 +532,7 @@ function updateChatChips() {
         const truFill = document.getElementById('chip-tru-fill');
         const affVal = document.getElementById('chip-aff-value');
         const truVal = document.getElementById('chip-tru-value');
-        const ap = (v) => Math.max(0, Math.min(100, (v + 100) / 2)) + '%';
+        const ap = (v) => Math.max(0, Math.min(100, v)) + '%';   // 173:0~100→0~100%,负值钳0(原(v+100)/2导致初始0=50%)
         if (affFill) affFill.style.width = ap(aff);
         if (truFill) truFill.style.width = ap(tru);
         if (affVal) affVal.textContent = aff;
@@ -536,7 +552,8 @@ function updateChatChips() {
     const chip = document.getElementById('chat-persona-chip');
     if (chip && ws && ws.getCurrentOutfit) {
         const outfit = ws.getCurrentOutfit();
-        chip.textContent = (outfit && outfit.name ? outfit.name : '默认') + '人格';
+        const nm = (outfit && outfit.name) || '默认';
+        chip.textContent = nm.indexOf('人格') >= 0 ? nm : nm + '人格';
     }
 }
 
@@ -559,10 +576,15 @@ function refreshHUD() {
         if (actions) actions.textContent = `行动点: ${status.actionsLeft}`;
         // HUD 左上角补充真实日期
         updateChatChips();
-    // 对话页场景区立绘跟随换装(145)
+    // 对话页场景区(157):优先服装专属场景图(__chatScenes),无映射回退当前立绘
     const sceneImg = document.getElementById('chat-scene-img');
     const charImg = document.getElementById('character-image');
-    if (sceneImg && charImg && sceneImg.src !== charImg.src) sceneImg.src = charImg.src;
+    if (sceneImg && charImg) {
+        const wsm = gameEngine ? gameEngine.getModule('WardrobeSystem') : null;
+        const oid = wsm && wsm.getCurrentOutfit ? (wsm.getCurrentOutfit().id || 'default') : 'default';
+        const sceneSrc = (window.__chatScenes && window.__chatScenes[oid]) || charImg.src;
+        if (sceneImg.src !== sceneSrc) sceneImg.src = sceneSrc;
+    }
     const dateEl = document.getElementById('hud-real-date');
         if (dateEl) dateEl.textContent = `${now.getMonth() + 1}月${now.getDate()}日 星期${['日','一','二','三','四','五','六'][now.getDay()]}`;
     }
@@ -645,10 +667,24 @@ function showErrorMessage(msg) {
 
 // ============= 聊天功能 =============
 function setupChat() {
+    // 164:补回 v162/v163 重写时丢失的三个核心绑定——①发送按钮 click ②输入框 Enter ③礼物按钮 click。
+    // 此前症状:发送按钮有 .btn 通用波纹「有点击反馈」但 sendChat 从未被调用(无法与 AI 交互);
+    // 礼物按钮无 .btn 类连波纹反馈都没有(点击无反应)。
     const sendBtn = document.getElementById('chat-send-btn');
+    if (sendBtn) sendBtn.addEventListener('click', sendChat);
     const input = document.getElementById('chat-input');
-    const openBtn = document.querySelector('[data-action="talk"]');
-        const closeBtn = document.getElementById('chat-close-chip');
+    if (input) {
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChat();
+            }
+        });
+    }
+    const giftBtn = document.getElementById('chat-gift-btn');
+    if (giftBtn) giftBtn.addEventListener('click', toggleGiftPanel);
+    // 打开聊天入口走 setupActions 的 data-action 委托(handleAction 'talk'→openChat),此处不重复绑定(防双开双扣行动值)
+    const closeBtn = document.getElementById('chat-close-chip');
     if (closeBtn) closeBtn.onclick = () => { closeChat(); };
     // 人格胶囊(145):点击打开换装
     const personaChip = document.getElementById('chat-persona-chip');
@@ -677,10 +713,15 @@ function setupChat() {
 }
 
 /**
- * 键盘收起后聊天保持最新(141):
- * adjustResize 下键盘弹出/收起改变视口高度 → .chat-messages 容器高度(42vh)随之伸缩,
- * 而 scrollTop 不变 → 收起后视觉跳到历史消息位置,最新对话「不见了」。
- * 监听 resize:高度显著恢复(键盘收起)且聊天面板打开 → 滚回底部(沉浸感连续)。
+ * 键盘弹出/收起的对话页适配(141 引入;166 重写):
+ * - 166 移除 v164 的 panel.style.height 硬锁——它是「页面内容逐字输出溢出文字框」根因:
+ *   ①键盘弹出动画期 Android 连发多次 resize,中间态 delta 过阈值即把面板锁死在动画
+ *   中间高度;②其后小幅 resize(候选栏高度变化/动画尾段)低于 12% 阈值永不重锁,
+ *   面板与视口永久错位,逐字输出 scrollTop=scrollHeight 在错位高度上计算即视觉溢出。
+ * - v165 壳层补白已正确(窗口收缩补偿+复评),WebView 视口=键盘上沿,普通文档流
+ *   chat-panel 100% 天然精确跟随,无需 JS 锁高。
+ * - 保留:键盘收起(大幅增高)时把消息滚回底部(容器高度随视口伸缩而 scrollTop 不变,
+ *   会视觉跳到历史消息位置)。阈值 12%/120px:排除小抖动,只响应真键盘。
  */
 function installKeyboardReopenFix() {
     if (window.__kbReopenFixInstalled) return;
@@ -688,14 +729,23 @@ function installKeyboardReopenFix() {
     let lastH = window.innerHeight;
     window.addEventListener('resize', () => {
         const h = window.innerHeight;
-        const grew = h - lastH;
+        const delta = h - lastH;
         lastH = h;
-        // 高度显著增大 = 键盘收起(阈值取 12%/120px,排除状态栏/导航栏小抖动)
-        if (grew > Math.max(120, h * 0.12)) {
-            const panel = document.getElementById('chat-panel');
-            if (panel && panel.style.display !== 'none') {
-                const box = document.getElementById('chat-messages');
-                if (box) box.scrollTop = box.scrollHeight;
+        const panel = document.getElementById('chat-panel');
+        const chatActive = panel && panel.style.display !== 'none' && document.body.classList.contains('chat-open');
+        if (!chatActive) return;
+        if (delta > Math.max(120, h * 0.12)) {
+            // 175 键盘收起两步修复:
+            // ① 复位 WebView 上滚——输入框聚焦时 Android WebView 会自动上滚页面以露出输入框,
+            //    收起后不自动回位,页面停留在上滑状态(scrollY>0,顶部露空/内容错位);
+            // ② 延迟滚回最新消息——收起瞬间视口/安全区仍在变化,立即 scrollTop 会被
+            //    后续布局作废,故 rAF+80ms+250ms 三次滚底(幂等)。
+            window.scrollTo(0, 0);
+            const box = document.getElementById('chat-messages');
+            if (box) {
+                requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+                setTimeout(() => { box.scrollTop = box.scrollHeight; }, 80);
+                setTimeout(() => { box.scrollTop = box.scrollHeight; }, 250);
             }
         }
     });
@@ -762,6 +812,14 @@ function revealProgressively(bubble, text, durationMs, messagesEl) {
  * 按音频时长逐字上屏;若音频先结束(合成失败)或 30s 未开播,则按阅读节奏兜底显现,文字必然完整。
  * 注意:先订阅再 speak,避免错过 onStart。
  */
+/** 全屏页面开关(158):打开时隐藏主容器——键盘弹出 WebView 上滚也不会露出主界面 */
+function setPageOpen(pageId, open) {
+    document.body.classList.toggle('page-open', !!open);
+    const page = document.getElementById(pageId);
+    if (page) page.style.display = open ? 'flex' : 'none';
+    window.scrollTo(0, 0);
+}
+
 /** 气泡头像行(1.1.10Beta5/145 对话改版):左侧圆形头像+气泡,双列同构 */
 function chatAvatarFor(role) {
     const av = document.createElement('div');
@@ -830,6 +888,66 @@ function revealBubbleTextSynced(bubble, text, tts) {
     }, 30000);
 
     if (tts) tts.speak(text, 'chat');
+}
+
+/** 209:Live2D 统一气泡槽——触摸反馈回复与对话回复同一位置同一样式(l2-chat-flow 内);
+ *  仅显示最新一条 AI 回复(用户消息不驻留),每次新内容重置 10s 计时,超时淡出移除。
+ *  extraMs:TTS 逐字显现等长内容场景的可延长驻留。 */
+let _l2BubbleTimer = 0;
+function showL2Bubble(text, opts = {}) {
+    const flow = document.getElementById('l2-chat-flow');
+    if (!flow) return;
+    clearTimeout(_l2BubbleTimer);
+    flow.innerHTML = '';
+    if (!text) return;
+    const b = document.createElement('div');
+    b.className = 'l2-msg ai' + (opts.loading ? ' loading' : '');
+    b.textContent = text;
+    flow.appendChild(b);
+    armL2BubbleHide(opts.holdMs || 0);
+}
+
+/** 209:气泡 10s 无新内容自动淡出(淡出动画 0.4s 后移除 DOM) */
+function armL2BubbleHide(extraMs = 0) {
+    clearTimeout(_l2BubbleTimer);
+    _l2BubbleTimer = setTimeout(() => {
+        const flow = document.getElementById('l2-chat-flow');
+        const b = flow && flow.firstChild;
+        if (!b) return;
+        b.classList.add('hide');
+        setTimeout(() => { if (b.parentNode) b.parentNode.removeChild(b); }, 450);
+    }, Math.max(10000, extraMs));
+}
+
+/** 205:Live2D 页对话——复用全局 AI/记忆/TTS 管线(sendMessage 同源)。
+ *  209:气泡槽仅显示最新一条 AI 回复(用户消息不驻留,发送后显示思考占位),
+ *  报错文案不朗读;回复 10s 无新内容自动淡出;与触摸回复同一位置同一样式。 */
+let _l2Sending = false;
+async function sendLive2DChat(text) {
+    if (!window.aiChatManager || _l2Sending) return;
+    _l2Sending = true;
+    showL2Bubble('…', { loading: true });
+    // 睡觉状态下开口说话会唤醒她
+    window.live2dSystem && window.live2dSystem.wake && window.live2dSystem.wake();
+    try {
+        const result = await window.aiChatManager.sendMessage(text);
+        const isErr = result.status === 'error' || result.source === 'error' || String(result.text || '').startsWith('⚠');
+        const tts = gameEngine.getModule('TTSManager');
+        showL2Bubble(result.text || '');
+        if (tts && !isErr) tts.speak(result.text, 'chat');
+        if (!isErr) {
+            const cs = gameEngine.getModule('CharacterSystem');
+            if (cs) cs.applyEffects({ affection: result.affectionDelta || 0, trust: result.trustDelta || 0 });
+            const qs = gameEngine.getModule('QuestSystem');
+            if (qs) qs.progress('chat_3', 1);
+            const ds = gameEngine.getModule('DiarySystem');
+            if (ds) ds.recordUserMessage();
+        }
+    } catch (e) {
+        showL2Bubble('⚠ ' + (e && e.message ? e.message : '发送失败'));
+    } finally {
+        _l2Sending = false;
+    }
 }
 
 /** 送出礼物：消耗背包库存 → AI 生成礼物反应 → 好感生效 */
@@ -908,7 +1026,11 @@ async function sendGift(giftId) {
 }
 
 function openChat() {
-    document.getElementById('chat-panel').style.display = 'flex';
+    // 163:body.chat-open 驱动(CSS 隐藏 gc+显示 chat-panel)
+    document.body.classList.add('chat-open');
+    // 166:清历史内联高度残留(v164 硬锁遗留;现已无锁定来源,幂等清理)
+    const panel = document.getElementById('chat-panel');
+    if (panel) panel.style.height = '';
     const input = document.getElementById('chat-input');
     if (input) setTimeout(() => input.focus(), 100);
     // 显示当前人格标签
@@ -950,9 +1072,12 @@ function updateChatPersonaTag() {
 }
 
 function closeChat() {
+    document.body.classList.remove('chat-open');
     const panel = document.getElementById('chat-panel');
-    panel.style.display = 'none';
-    panel.classList.remove('expanded');
+    if (panel) {
+        panel.style.display = 'none';
+        panel.style.height = ''; // 166:清历史内联高度残留(幂等)
+    }
 }
 
 /**
@@ -979,6 +1104,7 @@ window.handleAndroidBack = function () {
     for (const m of staticModals) {
         if (m.style.display && m.style.display !== 'none') {
             m.style.display = 'none';
+            if (m.id === 'live2d-page' && window.live2dSystem) window.live2dSystem.closePage();
             return 'true';
         }
     }
@@ -988,8 +1114,10 @@ window.handleAndroidBack = function () {
         chat.classList.remove('expanded');
         return 'true';
     }
-    // 4. 关闭聊天面板
-    if (chat && chat.style.display !== 'none') {
+    // 4. 关闭聊天面板(172 根修:对话页 v163 起由 body.chat-open 类驱动显示,
+    //    内联 style.display 恒为 'none'——旧检测永假,导致对话页手势返回失效
+    //    (不回主界面反而退后台)。改用类检测,从任何对话状态手势返回主界面)
+    if (document.body.classList.contains('chat-open')) {
         closeChat();
         return 'true';
     }
@@ -1053,7 +1181,10 @@ async function sendChat() {
     const thinkingBubble = document.createElement('div');
     thinkingBubble.className = 'chat-bubble ai loading';
     thinkingBubble.textContent = '天依正在想';
-    messages.appendChild(thinkingBubble);
+    // 168:必须经 chatWrapRow 包裹(头像+行容器)——直接 append 会缺头像,
+    // 且 .chat-bubble 的 flex:1 1 auto 在纵向 flex 容器(.chat-messages)中作用于
+    // 垂直方向,多消息时 flex-shrink 压缩气泡高度→文字溢出边框(送礼路径正常即因有包裹)
+    messages.appendChild(chatWrapRow('ai', thinkingBubble));
     messages.scrollTop = messages.scrollHeight;
     status.textContent = '天依正在思考…';
     status.className = 'chat-status thinking';
@@ -1112,6 +1243,22 @@ function setupActions() {
             handleAction(btn.dataset.nav);
         });
     });
+    const lc = document.getElementById('live2d-close');
+    if (lc) lc.onclick = () => { document.getElementById('live2d-page').style.display = 'none'; window.live2dSystem && window.live2dSystem.closePage(); };
+    // 205:Live2D 页聊天条——发送按钮/Enter 发送(复用全局 AI/记忆/TTS 管线)
+    const l2send = document.getElementById('l2-send-btn');
+    const l2input = document.getElementById('l2-chat-input');
+    if (l2send && l2input && !l2send.dataset.bound) {
+        l2send.dataset.bound = '1';
+        const doL2Send = () => {
+            const text = l2input.value.trim();
+            if (!text) return;
+            l2input.value = '';
+            sendLive2DChat(text);
+        };
+        l2send.addEventListener('click', doL2Send);
+        l2input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doL2Send(); } });
+    }
     const pc = document.getElementById('profile-close-btn');
     if (pc) pc.onclick = () => { document.getElementById('profile-modal').style.display = 'none'; };
     // 通用按钮波纹
@@ -1124,7 +1271,10 @@ function setupActions() {
 function handleAction(action) {
     switch (action) {
         case 'talk': openChat(); break;
-        case 'live2d': window.live2dSystem && window.live2dSystem.toggle(); break;
+        case 'live2d':
+            document.getElementById('live2d-page').style.display = 'flex';
+            window.live2dSystem && window.live2dSystem.openPage();
+            break;
         case 'activity': openActivity(); break;
         case 'profile': openProfile(); break;
         case 'diary': openDiary(); break;
@@ -1419,11 +1569,25 @@ function openGame() {
     });
 }
 
-/** 五子棋对战(144):玩家执黑先手,GomokuAI 执白;15 路盘,可重开 */
+/** 五子棋对战(144 框架;211 重构为正经棋盘):
+ *  - Canvas 15 路盘,棋子落在网格交叉点(线+星位+最后一手标记),非格子里
+ *  - 难度三层 简单/普通/困难(GomokuAI.setLevel,localStorage 持久化,可随时切换)
+ *  - 回合锁(AI 思考中不可落子,修双击连下竞态)+平局判定(修软锁)+打开即 reset(修重进软锁)
+ *  - 输赢/平局/过程提示全部为洛天依语气 */
+const GOMOKU_LEVELS = [
+    { key: 'easy', label: '简单', reward: { affection: 2, trust: 1 } },
+    { key: 'normal', label: '普通', reward: { affection: 3, trust: 1 } },
+    { key: 'hard', label: '困难', reward: { affection: 5, trust: 2 } },
+];
 function openGomoku() {
     const bs = gameEngine.getModule('BattleSystem');
     const engine = bs && bs.getGomokuEngine();
     if (!engine) { window.showToast('对战引擎未就绪', 'error'); return; }
+    engine.reset();   // 211:打开即重置(修重进软锁——引擎是常驻单例,上局残局会拒收落子)
+    const N = engine.size;
+    let level = localStorage.getItem('gomokuLevel');
+    if (!GOMOKU_LEVELS.some((l) => l.key === level)) level = 'normal';
+    engine.setLevel(level);
     const root = document.getElementById('modal-root');
     if (!root) return;
     const m = document.createElement('div');
@@ -1432,56 +1596,151 @@ function openGomoku() {
     m.innerHTML = `
         <div class="modal-card gomoku-card">
             <h2>⚫ 五子棋</h2>
-            <p id="gomoku-status" class="form-hint">你执黑 ●,AI 执白 ○——点格子落子,先连五子者胜</p>
-            <div id="gomoku-board" class="gomoku-board"></div>
+            <div class="gomoku-levels" id="gomoku-levels">
+                ${GOMOKU_LEVELS.map((l) => `<button class="btn btn-secondary gomoku-level" data-l="${l.key}">${l.label}</button>`).join('')}
+            </div>
+            <p id="gomoku-status" class="form-hint"></p>
+            <canvas id="gomoku-board" class="gomoku-board"></canvas>
             <div class="modal-actions">
                 <button id="gomoku-restart" class="btn btn-secondary">重开一局</button>
                 <button class="btn btn-ghost gomoku-close">关闭</button>
             </div>
         </div>`;
     root.appendChild(m);
-    const boardEl = m.querySelector('#gomoku-board');
+    const canvas = m.querySelector('#gomoku-board');
     const statusEl = m.querySelector('#gomoku-status');
     let over = false;
-    const cells = [];
-    for (let y = 0; y < 15; y++) for (let x = 0; x < 15; x++) {
-        const c = document.createElement('button');
-        c.className = 'gomoku-cell';
-        c.dataset.x = x; c.dataset.y = y;
-        c.onclick = () => {
-            if (over || !engine.place(x, y, 1)) return;
-            render();
-            if (engine.winner) return finish(1);
-            statusEl.textContent = 'AI 思考中…';
-            setTimeout(() => {
-                if (over) return;
-                const mv = engine.aiMove(2);
-                render();
-                if (engine.winner) finish(2);
-                else if (mv) statusEl.textContent = 'AI 落子 (' + (mv.x + 1) + ',' + (mv.y + 1) + '),轮到你';
-            }, 120);
-        };
-        cells.push(c);
-        boardEl.appendChild(c);
+    let busy = false;   // 211:回合锁——AI 思考窗口内拒绝落子(修快速双击连下两手竞态)
+
+    const TONE = {
+        start: '来啦~你执黑 ● 先手哦,点棋盘上的交叉点落子 ♪',
+        thinking: '天依想想哦…嗯……',
+        aiMoved: (mv) => `天依下在 (${mv.x + 1},${mv.y + 1}) 啦,轮到你咯 ♪`,
+        win: '呜哇…你居然赢啦!哼,下次天依可要认真起来了哦 ♪',
+        lose: '嘿嘿,天依赢啦~你的棋力也很棒哦,再来一局嘛 ♪',
+        draw: '哇…棋盘都下满了还没分出胜负,势均力敌呢!再来一局分个高下嘛 ♪',
+    };
+
+    // —— 棋盘几何:15 条线 15×15 交叉点,棋子落交叉点(非格子) ——
+    let W = 0, cell = 0, pad = 0;
+    function fit() {
+        const avail = Math.min(canvas.parentElement ? canvas.parentElement.clientWidth : 320, 420);
+        W = Math.max(240, Math.floor(avail));
+        const dpr = Math.min(2, window.devicePixelRatio || 1);
+        canvas.style.width = W + 'px';
+        canvas.style.height = W + 'px';
+        canvas.width = W * dpr;
+        canvas.height = W * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cell = W / (N + 1);
+        pad = cell;
     }
-    function render() {
-        for (const c of cells) {
-            const v = engine.board[Number(c.dataset.y)][Number(c.dataset.x)];
-            c.textContent = v === 1 ? '⚫' : v === 2 ? '⚪' : '';
+    const px = (i) => pad + i * cell;
+
+    function draw() {
+        fit();
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, W, W);
+        // 盘面
+        ctx.fillStyle = '#e8c88f';
+        ctx.fillRect(0, 0, W, W);
+        // 网格线
+        ctx.strokeStyle = '#8a6a3a';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < N; i++) {
+            ctx.beginPath(); ctx.moveTo(px(0), px(i)); ctx.lineTo(px(N - 1), px(i)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(px(i), px(0)); ctx.lineTo(px(i), px(N - 1)); ctx.stroke();
+        }
+        // 外框加粗
+        ctx.lineWidth = 2;
+        ctx.strokeRect(px(0), px(0), cell * (N - 1), cell * (N - 1));
+        // 星位(天元+四星)
+        ctx.fillStyle = '#8a6a3a';
+        for (const [sx, sy] of [[7, 7], [3, 3], [11, 3], [3, 11], [11, 11]]) {
+            ctx.beginPath(); ctx.arc(px(sx), px(sy), Math.max(2, cell * 0.09), 0, Math.PI * 2); ctx.fill();
+        }
+        // 棋子(落交叉点)
+        for (const mv of engine.moves) {
+            const cx = px(mv.x), cy = px(mv.y), r = cell * 0.44;
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            if (mv.id === 1) {
+                const g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+                g.addColorStop(0, '#5a5a5a'); g.addColorStop(1, '#0a0a0a');
+                ctx.fillStyle = g;
+            } else {
+                const g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+                g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#cfcfcf');
+                ctx.fillStyle = g;
+            }
+            ctx.fill();
+            if (mv.id === 2) { ctx.strokeStyle = '#8a8a8a'; ctx.lineWidth = 1; ctx.stroke(); }
+            // 最后一手标记
+            if (mv === engine.moves[engine.moves.length - 1] && !engine.winner) {
+                ctx.beginPath(); ctx.arc(cx, cy, r * 0.28, 0, Math.PI * 2);
+                ctx.fillStyle = mv.id === 1 ? '#e86a5a' : '#d0342c';
+                ctx.fill();
+            }
         }
     }
+
+    // 落子:点击 → 最近交叉点(round 直接吸附)
+    canvas.addEventListener('click', (e) => {
+        if (over || busy) return;                        // 211:AI 思考中锁定
+        const rect = canvas.getBoundingClientRect();
+        const gx = Math.round((e.clientX - rect.left) / rect.width * (N + 1)) - 1;
+        const gy = Math.round((e.clientY - rect.top) / rect.height * (N + 1)) - 1;
+        if (gx < 0 || gy < 0 || gx >= N || gy >= N) return;
+        if (!engine.place(gx, gy, 1)) return;
+        draw();
+        if (engine.winner) return finish(1);
+        if (engine.isFull()) return finish(0);           // 211:平局判定(修下满软锁)
+        busy = true;
+        statusEl.textContent = TONE.thinking;
+        setTimeout(() => {
+            busy = false;
+            if (over) return;
+            const mv = engine.aiMove(2);
+            draw();
+            if (engine.winner) return finish(2);
+            if (engine.isFull()) return finish(0);
+            if (mv) statusEl.textContent = TONE.aiMoved(mv);
+        }, 260);
+    });
+
     function finish(w) {
         over = true;
-        statusEl.textContent = w === 1 ? '🎉 你赢了!' : 'AI 获胜,再战一局?';
+        statusEl.textContent = w === 1 ? TONE.win : w === 2 ? TONE.lose : TONE.draw;
         if (w === 1) {
+            const lv = GOMOKU_LEVELS.find((l) => l.key === level) || GOMOKU_LEVELS[1];
             const cs = gameEngine.getModule('CharacterSystem');
-            if (cs) cs.applyEffects({ affection: 3, trust: 1 });
+            if (cs) cs.applyEffects(lv.reward);   // 211:奖励随难度分级
             refreshHUD();
         }
     }
-    render();
+
+    // 难度选择(可局中切换,即时生效;localStorage 持久化)
+    const levelBtns = [...m.querySelectorAll('.gomoku-level')];
+    function syncLevelBtns() {
+        levelBtns.forEach((b) => b.classList.toggle('active', b.dataset.l === level));
+    }
+    levelBtns.forEach((b) => {
+        b.onclick = () => {
+            level = b.dataset.l;
+            localStorage.setItem('gomokuLevel', level);
+            engine.setLevel(level);
+            syncLevelBtns();
+            if (!over) statusEl.textContent = '难度已切换为「' + (GOMOKU_LEVELS.find((l) => l.key === level) || {}).label + '」~继续对局 ♪';
+        };
+    });
+    syncLevelBtns();
+    statusEl.textContent = TONE.start;
+    draw();
     m.querySelector('.gomoku-close').onclick = () => m.remove();
-    m.querySelector('#gomoku-restart').onclick = () => { engine.reset(); over = false; statusEl.textContent = '你执黑 ●,先手落子'; render(); };
+    m.querySelector('#gomoku-restart').onclick = () => {
+        engine.reset(); over = false; busy = false;
+        statusEl.textContent = TONE.start; draw();
+    };
 }
 
 /** 活动面板(144):整合约会+旅行入口 */
@@ -1510,11 +1769,9 @@ function openActivity() {
 
 /** 角色属性面板(144):好感/信任/行动点/等级/钻石/服装 */
 function openProfile() {
-    const modal = document.getElementById('profile-modal');
-    if (!modal) return;
     updateChatChips();
     updateProfileStats();
-    modal.style.display = 'flex';
+    document.getElementById('profile-modal').style.display = 'flex';
 }
 
 /** 属性面板数值(146):好感/信任(-100~100 → 0~100% 条)+行动值(left/max);打开与数值变化时刷新 */
@@ -1523,7 +1780,7 @@ function updateProfileStats() {
     if (cs) {
         const aff = Math.round(cs.stats.affection || 0);
         const tru = Math.round(cs.stats.trust || 0);
-        const pct = (v) => Math.max(0, Math.min(100, (v + 100) / 2)) + '%';
+        const pct = (v) => Math.max(0, Math.min(100, v)) + '%';   // 173:0~100→0~100%,负值钳0(原(v+100)/2导致初始0=50%)
         const af = document.getElementById('prof-aff-fill');
         if (af) af.style.width = pct(aff);
         const an = document.getElementById('prof-aff-num');

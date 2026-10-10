@@ -148,19 +148,20 @@ class CharacterSystem {
     }
 
     updateUI() {
-        const affBar = document.getElementById('hud-affection-bar');
-        const affVal = document.getElementById('hud-affection-value');
-        const truBar = document.getElementById('hud-trust-bar');
-        const truVal = document.getElementById('hud-trust-value');
+        const affBar = document.getElementById('prof-aff-fill');
+        const affVal = document.getElementById('prof-aff-num');
+        const truBar = document.getElementById('prof-tru-fill');
+        const truVal = document.getElementById('prof-tru-num');
         if (affBar) {
-            // 新刻度 -100..100:0 在条中央(半条=普通朋友)
-            const pct = (this.stats.affection + 100) / 200 * 100;
-            affBar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+            // 176:属性面板进度条按 0~100 正确百分比(用户要求;原(v+100)/2 把 -100~100 刻度
+            // 映射成 0=50%,与 173 修复的 main.js 两处口径不一致)——数值即百分比,负值钳 0
+            const pct = Math.max(0, Math.min(100, this.stats.affection));
+            affBar.style.width = pct + '%';
         }
         if (affVal) affVal.textContent = Math.round(this.stats.affection);
         if (truBar) {
-            const pct = (this.stats.trust + 100) / 200 * 100;
-            truBar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+            const pct = Math.max(0, Math.min(100, this.stats.trust));
+            truBar.style.width = pct + '%';
         }
         if (truVal) truVal.textContent = Math.round(this.stats.trust);
     }
