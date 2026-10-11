@@ -25,9 +25,9 @@ for root, dirs, files in os.walk(SRC):
         shutil.copy2(os.path.join(root, f), os.path.join(dst_root, f))
 
 # 清理 Android 专属/构建残留(不进 iOS 包)
+# 注:model_packs.json 保留——211/Bata42 起与 app-dev assets 全量一致(见 git cda05e1)
 for p in (
     os.path.join(DST, 'dexopt'),
-    os.path.join(DST, 'asr', 'model_packs.json'),  # iOS 端无 FunASR 运行时,模型包机制不适用
 ):
     if os.path.isdir(p):
         shutil.rmtree(p)
